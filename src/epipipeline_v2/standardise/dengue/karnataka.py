@@ -20,8 +20,8 @@ def sanity(date):
         return pd.NaT
 
 
-def standardise_ka_v1(preprocessed_data_dict, regionIDs_dict,
-                      regionIDs_df, thresholds):
+def standardise_ka_linelist_v1(preprocessed_data_dict, regionIDs_dict,
+                               regionIDs_df, thresholds):
 
     standardised_data_dict = {}
     for districtID in preprocessed_data_dict.keys():

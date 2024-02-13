@@ -112,7 +112,7 @@ def preprocess_ka_linelist_v2(raw_data_dict, preprocess_metadata,
                 for option in name_options:
                     header_mapper[option] = standard_name
 
-            df = df.rename(column=header_mapper)
+            df = df.rename(columns=header_mapper)
 
         # Rename all recognised columns to standard names
 

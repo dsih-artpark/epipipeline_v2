@@ -35,7 +35,8 @@ def read_ka_linelist(raw_data_dir, sheet_codes, regionIDs_dict, verbose=False):
 
 
 def preprocess_ka_linelist_v2(raw_data_dict, preprocess_metadata,
-                              accepted_headers, regionIDs_dict):
+                              accepted_headers, regionIDs_dict,
+                              verbose=False):
 
     error = []
     preprocessed_data_dict = {}
@@ -50,7 +51,8 @@ def preprocess_ka_linelist_v2(raw_data_dict, preprocess_metadata,
         if len(df) <= 1:
             e = "District " + district_name + " (" + district + ") has no data."
             error.append(e)
-            print(e)
+            if verbose:
+                print(e)
             continue
 
         # To account for empty excel sheets with one lone value in the 10000th row
@@ -66,7 +68,8 @@ def preprocess_ka_linelist_v2(raw_data_dict, preprocess_metadata,
         if k == 5:
             e = "District " + district_name + " (" + district + ") has no data."
             error.append(e)
-            print(e)
+            if verbose:
+                print(e)
             continue
 
         if district in preprocess_metadata["no_merge_headers"]:

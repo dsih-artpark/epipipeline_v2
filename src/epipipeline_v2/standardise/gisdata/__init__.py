@@ -32,7 +32,7 @@ def get_children(regionID, childType, regionIDs_df):
 def fuzzy_matching(string, choices, threshold):
 
     # what does process.extractOne do?
-    best_match = process.extractOne(string, choices)
+    best_match = process.extractOne(str(string), choices)
 
     if best_match[1] > threshold:
         return best_match[0]

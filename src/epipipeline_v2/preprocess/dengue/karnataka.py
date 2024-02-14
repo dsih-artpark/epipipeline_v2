@@ -160,7 +160,8 @@ def preprocess_ka_linelist_v2(raw_data_dict, preprocess_metadata,
                 ") is missing " + str(len(absent_headers)) + " header(s): " + \
                 ", ".join(absent_headers) + "."
             error.append(e)
-            print(e)
+            if verbose:
+                print(e)
 
         preprocessed_data_dict[district] = df
 

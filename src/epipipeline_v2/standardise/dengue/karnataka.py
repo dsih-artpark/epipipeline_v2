@@ -326,6 +326,12 @@ def update_summaries_by_day_on_S3(raw_URI_Prefix, std_URI_Prefix, year, metadata
 
     tmpdir = tempfile.TemporaryDirectory()
 
+    if len(to_standardise) == 0:
+        e = "No fresh daily summaries available"
+        dse_all += [e]
+        if verbose:
+            print(e)
+
     for date in to_standardise:
         if dt.strptime(date, "%Y-%m-%d") >= START_DATE:
 
@@ -346,6 +352,9 @@ def update_summaries_by_day_on_S3(raw_URI_Prefix, std_URI_Prefix, year, metadata
 
             std_Key = std_Prefix + date + ".csv"
             upload_files(Bucket=std_Bucket, Key=std_Key, Filename=std_fname)
+
+            if verbose:
+                print("Daily Summary Upload Successful for " + date)
 
             if len(dse) > 0:
                 dse_all += dse

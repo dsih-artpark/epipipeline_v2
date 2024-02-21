@@ -353,7 +353,7 @@ def update_summaries_by_day_on_S3(raw_URI_Prefix, std_URI_Prefix, year, metadata
             std_Key = std_Prefix + date + ".csv"
             upload_files(Bucket=std_Bucket, Key=std_Key, Filename=std_fname)
 
-            e = "Daily Summary Upload Successful for " + str(date)
+            e = "Daily Summary " + str(version) + " Upload Successful for " + str(date)
             dse += [e]
             if verbose:
                 print(e)

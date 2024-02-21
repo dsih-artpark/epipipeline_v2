@@ -166,3 +166,8 @@ def preprocess_ka_linelist_v2(raw_data_dict, preprocess_metadata,
         preprocessed_data_dict[district] = df
 
     return preprocessed_data_dict, error
+
+
+def read_ka_daily_summary_v2(dataset_info, date=None, year=None, file="oneday", verbose=False):
+
+    pass

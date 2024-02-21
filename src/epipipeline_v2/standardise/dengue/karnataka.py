@@ -6,6 +6,9 @@ from epipipeline_v2.standardise.demographics import standardise_gender
 from epipipeline_v2.standardise.gisdata.karnataka import get_sd_vill_v1
 from epipipeline_v2.standardise.dates import parse_date
 from epipipeline_v2.ud.download import download_file_from_URI
+from epipipeline_v2.ud.upload import upload_files
+import boto3
+import tempfile
 import warnings
 from datetime import datetime as dt
 import re
@@ -287,3 +290,64 @@ def get_ka_daily_summary_v2(raw_URI, preprocess_metadata,
     summary_v2 = summary_v2.fillna(0)
 
     return summary_v2, error
+
+
+def update_summaries_by_day_on_S3(raw_URI_Prefix, std_URI_Prefix, year, metadata,
+                                  regionIDs_df, regionIDs_dict,
+                                  version="v2", START_DATE=dt.strptime("2023-07-01", "%Y-%m-%d"),
+                                  verbose=False
+                                  ):
+
+    s3 = boto3.client('s3')
+
+    dse_all = []
+
+    # Get all objects available in source bucket
+
+    raw_Bucket = raw_URI_Prefix.removeprefix("s3://").split("/")[0]
+    raw_Prefix = raw_URI_Prefix.removeprefix("s3://").removeprefix(raw_Bucket + "/")
+
+    raw_objects = s3.list_objects_v2(Bucket=raw_Bucket, Prefix=raw_Prefix + str(year) + "-")
+    # raw_keys = [obj["Key"] for obj in raw_objects.get("Contents", []) if obj["Size"] > 0]
+    raw_dates = [obj["Key"].split("/")[-1].removesuffix(".xlsx")
+                 for obj in raw_objects.get("Contents", []) if obj["Size"] > 0]
+
+    # Get all objects in the destination bucket
+
+    std_Bucket = std_URI_Prefix.removeprefix("s3://").split("/")[0]
+    std_Prefix = std_URI_Prefix.removeprefix("s3://").removeprefix(std_Bucket + "/")
+
+    std_objects = s3.list_objects_v2(Bucket=std_Bucket, Prefix=std_Prefix + str(year) + "-")
+    # std_keys = [obj["Key"] for obj in std_objects.get("Contents", []) if obj["Size"] > 0]
+    std_dates = [obj["Key"].split("/")[-1].removesuffix(".csv")
+                 for obj in std_objects.get("Contents", []) if obj["Size"] > 0]
+
+    to_standardise = list(set(raw_dates).difference(set(std_dates)))
+
+    tmpdir = tempfile.TemporaryDirectory()
+
+    for date in to_standardise:
+        if dt.strptime(date, "%Y-%m-%d") >= START_DATE:
+
+            raw_URI = raw_URI_Prefix + date + ".xlsx"
+
+            summary, dse = get_ka_daily_summary_v2(raw_URI=raw_URI,
+                                                   preprocess_metadata=metadata['preprocess'],
+                                                   regionIDs_df=regionIDs_df,
+                                                   regionIDs_dict=regionIDs_dict,
+                                                   datadict_github_raw_url=metadata['datadictionary_github_raw_url'],
+                                                   verbose=verbose
+                                                   )
+            if version == "v1":
+                summary = get_ka_daily_summary_v1(summary)
+
+            std_fname = tmpdir.name + "/" + date + ".csv"
+            summary.to_csv(path_or_buf=std_fname, index=False)
+
+            std_Key = std_Prefix + date + ".csv"
+            upload_files(Bucket=std_Bucket, Key=std_Key, Filename=std_fname)
+
+            if len(dse) > 0:
+                dse_all += dse
+
+    return dse_all

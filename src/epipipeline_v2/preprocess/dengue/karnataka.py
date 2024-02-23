@@ -3,7 +3,19 @@ import re
 import os
 
 
-def read_ka_linelist(raw_data_dir, sheet_codes, regionIDs_dict, verbose=False):
+def read_ka_linelist(raw_data_dir: str, sheet_codes: dict, regionIDs_dict: dict, verbose: bool = False):
+    """Function to read Karnataka Linelists. Not yet completely robust.
+
+    Args:
+        raw_data_dir (str): directory containing xlsx files to be read. Currently only supports local directories.
+        sheet_codes (dict): mapper object (dictionary) that maps the tabs of the xlsx with district regionID based on LGD.
+        regionIDs_dict (dict): LGD Source of Truth in dictionary format.
+        verbose (bool, optional): Decides if script log should print. For development.
+            It's recommended to use the returned error for production. Defaults to False.
+
+    Returns:
+       : _description_
+    """
 
     raw_data_dict = dict()
 
@@ -166,8 +178,3 @@ def preprocess_ka_linelist_v2(raw_data_dict, preprocess_metadata,
         preprocessed_data_dict[district] = df
 
     return preprocessed_data_dict, error
-
-
-def read_ka_daily_summary_v2(dataset_info, date=None, year=None, file="oneday", verbose=False):
-
-    pass

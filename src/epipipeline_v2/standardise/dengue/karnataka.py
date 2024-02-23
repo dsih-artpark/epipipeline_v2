@@ -16,6 +16,9 @@ import requests
 import yaml
 
 
+pd.set_option('future.no_silent_downcasting', True)
+
+
 def id2code(id_):
     return id_.split("_")[-1]
 
@@ -226,7 +229,7 @@ def get_ka_daily_summary_v2(raw_URI, preprocess_metadata,
     bbmp_posn = re.sub('[^A-Za-z0-9 ]+', '', str(summary_v2["s.no"].loc[31])).strip()
 
     if bbmp_posn == "Bangaluru City BBMP":
-        summary_v2["regionName"].loc[31] = "BBMP"
+        summary_v2.loc[31, "regionName"] = "BBMP"
 
     summary_v2 = summary_v2.drop("s.no", axis="columns")
     district_mapping = preprocess_metadata['district_mapping']

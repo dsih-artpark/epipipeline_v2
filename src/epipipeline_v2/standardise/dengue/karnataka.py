@@ -140,7 +140,7 @@ def get_ka_daily_summary_v1(summary):
 
     message = "The v1 format for Daily Summaries is outdated, and will not be supported in future releases."  # noqa
 
-    warnings.warn(message, DeprecationWarning, stacklevel=2)
+    warnings.warn(message, DeprecationWarning, stacklevel=3)
     # Convert to v1
     summary["type"] = "summary"
     summary["state_code"] = 29

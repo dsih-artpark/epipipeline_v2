@@ -269,7 +269,7 @@ def get_ka_daily_summary_v2(raw_URI, preprocess_metadata,
     datadict = datadict_response.content.decode("utf-8")
     datadict = yaml.safe_load(datadict)
 
-    accepted_headers = list(datadict["columns"].keys())
+    accepted_headers = list(datadict["fields"].keys())
 
     if require_all_headers:
         accepted_headers_set = set(accepted_headers)

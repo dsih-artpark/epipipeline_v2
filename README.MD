@@ -4,7 +4,7 @@ This repository contains code that can be used to standardise linelists and summ
 
 The standards currently used are:
 
-    1. Linelists: [YAML](https://github.com/dsih-artpark/data_documentation/documentation/EP/EP0005DS0014-KA_Dengue_LL/datadictionary.yaml), [MD]([YAML](https://github.com/dsih-artpark/data_documentation/documentation/EP/EP0005DS0014-KA_Dengue_LL/datadictionary.MD))
-    2. Daily Summaries: [YAML](https://github.com/dsih-artpark/data_documentation/documentation/EP/EP0006DS0015-KA_Dengue_Daily_SUM/datadictionary.yaml), [md](https://github.com/dsih-artpark/data_documentation/documentation/EP/EP0006DS0015-KA_Dengue_Daily_SUM/datadictionary.md)
+1. Linelists: [YAML](https://raw.githubusercontent.com/dsih-artpark/data_documentation/production/documentation/EP/EP0005DS0014-KA_Dengue_LL/datadictionary.yaml), [MD](https://raw.githubusercontent.com/dsih-artpark/data_documentation/production/documentation/EP/EP0005DS0014-KA_Dengue_LL/datadictionary.MD)
+2. Daily Summaries: [YAML](https://raw.githubusercontent.com/dsih-artpark/data_documentation/production/documentation/EP/EP0006DS0015-KA_Dengue_Daily_SUM/datadictionary.yaml), [MD](https://raw.githubusercontent.com/dsih-artpark/data_documentation/production/documentation/EP/EP0006DS0015-KA_Dengue_Daily_SUM/datadictionary.md)
 
-This package's latest stable release, v2.0.11, supports Karnataka data.
+This package's latest stable release, v2.0.11, supports Karnataka data. The package is still in a limited beta, and documentation and feature addition is underway.

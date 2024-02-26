@@ -1,4 +1,4 @@
-from epipipeline_v2.standardise.gisdata import fuzzy_matching
+from epipipeline.standardise.gisdata import fuzzy_matching
 
 
 def get_sd_vill_v1(districtID, subdistrictName, villageName,

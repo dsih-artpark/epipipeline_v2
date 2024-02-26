@@ -1,12 +1,12 @@
 import pandas as pd
 import numpy as np
 import datetime
-from epipipeline_v2.standardise.demographics import standardise_age
-from epipipeline_v2.standardise.demographics import standardise_gender
-from epipipeline_v2.standardise.gisdata.karnataka import get_sd_vill_v1
-from epipipeline_v2.standardise.dates import parse_date
-from epipipeline_v2.ud.download import download_file_from_URI
-from epipipeline_v2.ud.upload import upload_files
+from epipipeline.standardise.demographics import standardise_age
+from epipipeline.standardise.demographics import standardise_gender
+from epipipeline.standardise.gisdata.karnataka import get_sd_vill_v1
+from epipipeline.standardise.dates import parse_date
+from epipipeline.ud.download import download_file_from_URI
+from epipipeline.ud.upload import upload_files
 import boto3
 import tempfile
 import warnings

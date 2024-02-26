@@ -1,4 +1,4 @@
-from epipipeline_v2.ud.download import download_dataset
+from epipipeline.ud.download import download_dataset
 from fuzzywuzzy import process
 import pandas as pd
 import os

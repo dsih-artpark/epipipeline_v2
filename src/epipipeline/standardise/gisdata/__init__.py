@@ -1,4 +1,4 @@
-from epipipeline_v2.ud.download import download_dataset
+from epipipeline.ud.download import download_dataset
 from fuzzywuzzy import process
 import pandas as pd
 import os
@@ -32,7 +32,7 @@ def get_children(regionID, childType, regionIDs_df):
 def fuzzy_matching(string, choices, threshold):
 
     # what does process.extractOne do?
-    best_match = process.extractOne(string, choices)
+    best_match = process.extractOne(str(string), choices)
 
     if best_match[1] > threshold:
         return best_match[0]

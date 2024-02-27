@@ -85,8 +85,6 @@ def download_dataset(ds_info: dict,
 
     if not custom_contains:
         Contains = ds_info["Contains"]
-    else:
-        Contains = ds_info["Contains"]
 
     if latest:
         client = boto3.client('s3')

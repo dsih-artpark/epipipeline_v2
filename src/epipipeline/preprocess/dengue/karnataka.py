@@ -3,7 +3,19 @@ import re
 import os
 
 
-def read_ka_linelist(raw_data_dir, sheet_codes, regionIDs_dict, verbose=False):
+def read_ka_linelist(raw_data_dir: str, sheet_codes: dict, regionIDs_dict: dict, verbose: bool = False):
+    """Function to read Karnataka Linelists. Not yet completely robust.
+
+    Args:
+        raw_data_dir (str): directory containing xlsx files to be read. Currently only supports local directories.
+        sheet_codes (dict): mapper object (dictionary) that maps the tabs of the xlsx with district regionID based on LGD.
+        regionIDs_dict (dict): LGD Source of Truth in dictionary format.
+        verbose (bool, optional): Decides if script log should print. For development.
+            It's recommended to use the returned error for production. Defaults to False.
+
+    Returns:
+       : _description_
+    """
 
     raw_data_dict = dict()
 
@@ -35,7 +47,8 @@ def read_ka_linelist(raw_data_dir, sheet_codes, regionIDs_dict, verbose=False):
 
 
 def preprocess_ka_linelist_v2(raw_data_dict, preprocess_metadata,
-                              accepted_headers, regionIDs_dict):
+                              accepted_headers, regionIDs_dict,
+                              verbose=False):
 
     error = []
     preprocessed_data_dict = {}
@@ -50,7 +63,8 @@ def preprocess_ka_linelist_v2(raw_data_dict, preprocess_metadata,
         if len(df) <= 1:
             e = "District " + district_name + " (" + district + ") has no data."
             error.append(e)
-            print(e)
+            if verbose:
+                print(e)
             continue
 
         # To account for empty excel sheets with one lone value in the 10000th row
@@ -66,7 +80,8 @@ def preprocess_ka_linelist_v2(raw_data_dict, preprocess_metadata,
         if k == 5:
             e = "District " + district_name + " (" + district + ") has no data."
             error.append(e)
-            print(e)
+            if verbose:
+                print(e)
             continue
 
         if district in preprocess_metadata["no_merge_headers"]:
@@ -111,8 +126,8 @@ def preprocess_ka_linelist_v2(raw_data_dict, preprocess_metadata,
             for standard_name, name_options in preprocess_metadata["header_mapper"]["district_specific_errors"][district].items():
                 for option in name_options:
                     header_mapper[option] = standard_name
-
-            df = df.rename(column=header_mapper)
+                    
+            df = df.rename(columns=header_mapper)
 
         # Rename all recognised columns to standard names
 
@@ -157,7 +172,8 @@ def preprocess_ka_linelist_v2(raw_data_dict, preprocess_metadata,
                 ") is missing " + str(len(absent_headers)) + " header(s): " + \
                 ", ".join(absent_headers) + "."
             error.append(e)
-            print(e)
+            if verbose:
+                print(e)
 
         preprocessed_data_dict[district] = df
 

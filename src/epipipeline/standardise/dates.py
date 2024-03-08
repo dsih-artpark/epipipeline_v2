@@ -27,7 +27,7 @@ def validate_dates(df, year_of_data, date_columns):
             if re.match(r'^\d{5}$', str(date)):
                 date = pd.to_datetime(int(date), unit='D', origin='1899-12-30')
             else:
-                date = pd.to_datetime(date, errors='coerce')
+                date = pd.to_datetime(date, errors='coerce', dayfirst=True)
             if date.year not in [year_of_data, year_of_data - 1, year_of_data + 1] or date > datetime.now():
                 return pd.NaT
             return date

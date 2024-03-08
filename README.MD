@@ -8,3 +8,5 @@ The standards currently used are:
 2. Daily Summaries: [YAML](https://raw.githubusercontent.com/dsih-artpark/data_documentation/production/documentation/EP/EP0006DS0015-KA_Dengue_Daily_SUM/datadictionary.yaml), [MD](https://raw.githubusercontent.com/dsih-artpark/data_documentation/production/documentation/EP/EP0006DS0015-KA_Dengue_Daily_SUM/datadictionary.md)
 
 This package's latest stable release, v2.0.11, supports Karnataka data. The package is still in a limited beta, and documentation and feature addition is underway.
+
+To install the package, copy the following snippet:

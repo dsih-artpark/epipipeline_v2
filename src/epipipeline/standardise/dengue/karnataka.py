@@ -47,6 +47,38 @@ def sanity(date):
         return pd.NaT
 
 
+def clean_test_method(series, test_type):
+
+    def clean_string(string):
+        # Convert to lowercase
+        string = string.lower()
+
+        # Remove special characters except '+' and '-'
+        string = re.sub(r'[^a-zA-Z0-9+\-]+', '', string)
+        string = re.sub(r'\s+', ' ', string).strip()
+
+        return string
+
+    def contains_keywords(string):
+        if test_type == "ns1":
+            keywords = ["ns1", "positive", "+ve"]
+            if any(keyword in string for keyword in keywords) or string == "1":
+                return True
+            else:
+                return pd.NA
+        elif test_type == "igm":
+            keywords = ["igm", "mac elisa", "positive", "+ve"]
+            if any(keyword in string for keyword in keywords) or string == "1":
+                return True
+            else:
+                return pd.NA
+
+    cleaned_series = series.apply(clean_string)
+    contains_keywords_series = cleaned_series.apply(contains_keywords)
+
+    return contains_keywords_series
+
+
 def standardise_ka_linelist_v1(preprocessed_data_dict, regionIDs_dict,
                                regionIDs_df, thresholds, year, version="v2"):
 
@@ -81,6 +113,10 @@ def standardise_ka_linelist_v1(preprocessed_data_dict, regionIDs_dict,
         date_columns = ["event.symptomOnsetDate", "event.test.sampleCollectionDate", "event.test.resultDate"]
 
         df = validate_dates(df=df, year_of_data=year, date_columns=date_columns)
+
+        df["event.test.test1.result"] = clean_test_method(df["event.test.test1.result"].astype(str), test_type="ns1")
+        if "event.test.test2.result" in df.columns:
+            df["event.test.test2.result"] = clean_test_method(df["event.test.test2.result"].astype(str), test_type="igm")
 
         standardised_data_dict[districtID] = df
 

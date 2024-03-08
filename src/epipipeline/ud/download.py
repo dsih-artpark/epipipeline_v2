@@ -21,8 +21,35 @@ def download_file_from_URI(URI, extension):
     return file
 
 
-def get_s3_versions_tags(Bucket, Prefix, Suffix, Contains):
+def get_s3_versions_tags(Bucket: str, Prefix: str, Suffix: str, Contains: str):
+    """
+    Retrieves version information and associated tags for S3 objects matching specified criteria.
 
+    Args:
+        Bucket (str): The name of the S3 bucket.
+        Prefix (str): The prefix to filter keys in the bucket.
+        Suffix (str): The suffix to filter keys in the bucket.
+        Contains (str): The substring to filter keys in the bucket.
+
+    Returns:
+        pandas.DataFrame: A DataFrame containing information about S3 object versions
+        matching the specified criteria, including the key, version date, and version ID.
+
+    Example:
+        Suppose you have an S3 bucket 'my_bucket' containing various versions of Excel files.
+        To retrieve version information and associated tags for all Excel files in the 'data/'
+        folder with '2022' in their key names, you can use the function as follows:
+
+        >>> import pandas as pd
+        >>> from datetime import datetime
+        >>> # Assuming boto3 and pandas are imported
+        >>> versions_df = get_s3_versions_tags(Bucket='my_bucket', Prefix='data/', Suffix='.xlsx', Contains='2022')
+        >>> print(versions_df)
+                            Key          VersionDate           VersionId
+        0  data/example.xlsx  2022-01-05T12:00:00Z  3Q4pDlMBg8wCVL7eE9Ekp3m0RTjmTIDF
+        1  data/example.xlsx  2022-01-03T12:00:00Z  3Q4pDlMBg8wCVL7eE9Ekp3m0RTjmTIDF
+        ...
+    """
     client = boto3.client('s3')
 
     all_keys = client.list_objects_v2(

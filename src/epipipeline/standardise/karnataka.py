@@ -1,9 +1,9 @@
 import pandas as pd
-import datetime
-from epipipeline_v2.standardise.demographics import standardise_age
-from epipipeline_v2.standardise.demographics import standardise_gender
-from epipipeline_v2.standardise.gisdata.karnataka import get_sd_vill_v1
-from epipipeline_v2.standardise.dates import parse_date
+from datetime import datetime
+from epipipeline.standardise.demographics import standardise_age
+from epipipeline.standardise.demographics import standardise_gender
+from epipipeline.standardise.gisdata.karnataka import get_sd_vill_v1
+from epipipeline.standardise.dates import validate_dates
 
 
 def id2code(id_):
@@ -21,7 +21,7 @@ def sanity(date):
 
 
 def standardise_ka_v1(preprocessed_data_dict, regionIDs_dict,
-                      regionIDs_df, thresholds):
+                      regionIDs_df, thresholds, year):
 
     standardised_data_dict = {}
     for districtID in preprocessed_data_dict.keys():
@@ -51,11 +51,9 @@ def standardise_ka_v1(preprocessed_data_dict, regionIDs_dict,
         df = pd.concat([df, location_df], axis=1)
         df["location.district.name"] = regionIDs_dict[districtID]["regionName"]
 
-        for date in ["event.symptomOnsetDate",
-                     "event.test.sampleCollectionDate",
-                     "event.test.resultDate"]:
+        date_columns = ["event.symptomOnsetDate", "event.test.sampleCollectionDate", "event.test.resultDate"]
 
-            df[date] = df[date].apply(parse_date)
+        df = validate_dates(df=df, year_of_data=year, date_columns=date_columns)
 
         standardised_data_dict[districtID] = df
 

@@ -1,6 +1,7 @@
 import pandas as pd
 from dateutil.parser import parse, ParserError
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
+import re
 
 
 def parse_date(value, dayfirst=True):
@@ -19,17 +20,13 @@ def parse_date(value, dayfirst=True):
 
 
 def validate_dates(df, year_of_data, date_columns):
-    # Function to convert Excel dates to datetime objects
-    def excel_to_datetime(date):
-        if isinstance(date, int):
-            return datetime(1899, 12, 30) + timedelta(days=date)
-        return date
 
     # Function to handle various date formats and coerce invalid formats to NaT
     def parse_date_v2(date):
         try:
-            date = pd.to_datetime(date, errors='coerce')
-            date = excel_to_datetime(date)
+            if re.match(r'^\d{5}$', str(date)):
+                date = pd.to_datetime(date, unit='D', origin='1899-12-30')
+            date = pd.to_datetime(date, errors='ignore')
             if date.year not in [year_of_data, year_of_data - 1, year_of_data + 1] or date > datetime.now():
                 return pd.NaT
             return date
@@ -42,7 +39,6 @@ def validate_dates(df, year_of_data, date_columns):
 
     # Iterate over each row in the DataFrame
     for column in date_columns:
-        df[column] = df[column].apply(excel_to_datetime)
         df[column] = df[column].apply(parse_date_v2)
 
     # Validate the order of dates

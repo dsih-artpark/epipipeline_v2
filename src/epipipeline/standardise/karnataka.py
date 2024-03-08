@@ -58,11 +58,11 @@ def standardise_ka_v1(preprocessed_data_dict, regionIDs_dict,
         standardised_data_dict[districtID] = df
 
     all_columns = set()
-    for key, value in standardised_data_dict.items():
+    for _, value in standardised_data_dict.items():
         all_columns = all_columns.union(set(value.columns.to_list()))
 
     missing_cols = set()
-    for key, value in standardised_data_dict.items():
+    for _, value in standardised_data_dict.items():
         missing_cols = missing_cols.union(all_columns.difference(set(value.columns.to_list())))
 
     missing_cols = list(missing_cols)

@@ -1,12 +1,12 @@
 import pandas as pd
 from dateutil.parser import parse, ParserError
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 
 def parse_date(value, dayfirst=True):
     if isinstance(value, pd.Timestamp):
         return value.date()
-    elif isinstance(value, datetime.date):
+    elif isinstance(value, date):
         return value
     elif isinstance(value, str):
         try:
@@ -37,8 +37,8 @@ def validate_dates(df, year_of_data, date_columns):
             return pd.NaT
 
     # Function to validate the order of dates
-    def validate_order(row):
-        return row[date_columns[0]] <= row[date_columns[1]] <= row[date_columns[2]]
+    # def validate_order(row):
+        # return row[date_columns[0]] <= row[date_columns[1]] <= row[date_columns[2]]
 
     # Iterate over each row in the DataFrame
     for column in date_columns:

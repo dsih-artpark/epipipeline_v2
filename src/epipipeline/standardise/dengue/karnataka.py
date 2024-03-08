@@ -80,7 +80,7 @@ def clean_test_method(series, test_type):
 
 
 def standardise_ka_linelist_v1(preprocessed_data_dict, regionIDs_dict,
-                               regionIDs_df, thresholds, year, version="v2"):
+                               regionIDs_df, thresholds, year, accepted_headers, version="v2"):
 
     standardised_data_dict = {}
     for districtID in preprocessed_data_dict.keys():
@@ -136,6 +136,11 @@ def standardise_ka_linelist_v1(preprocessed_data_dict, regionIDs_dict,
 
     if version == "v2":
         df["metadata.primaryDate"] = df["event.symptomOnsetDate"].fillna(df["event.test.sampleCollectionDate"]).fillna(df["event.test.resultDate"])  # noqa: E501
+
+        headers = [head for head in df.columns.to_list() if head in accepted_headers]
+        headers = sorted(headers, key=accepted_headers.index)
+        df = df[headers]
+
         return df
     elif version == "v1":
 

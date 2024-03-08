@@ -24,7 +24,7 @@ def validate_dates(df, year_of_data, date_columns):
     # Function to handle various date formats and coerce invalid formats to NaT
     def parse_date_v2(date):
         if re.match(r'^\d{5}$', str(date)):
-            date = pd.to_datetime(int(date), unit='D', origin='1899-12-30')
+            date = pd.to_datetime(int(date), unit='D', origin='1899-12-30', errors='coerce')
         else:
             date = pd.to_datetime(date, errors="coerce", dayfirst=True)
         if date.year not in [year_of_data, year_of_data - 1, year_of_data + 1] or date > datetime.now():

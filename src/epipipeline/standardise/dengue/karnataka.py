@@ -48,7 +48,7 @@ def sanity(date):
 
 
 def standardise_ka_linelist_v1(preprocessed_data_dict, regionIDs_dict,
-                               regionIDs_df, thresholds, year):
+                               regionIDs_df, thresholds, year, version="v2"):
 
     standardised_data_dict = {}
     for districtID in preprocessed_data_dict.keys():
@@ -97,37 +97,46 @@ def standardise_ka_linelist_v1(preprocessed_data_dict, regionIDs_dict,
     df = df.drop(columns=missing_cols, errors='ignore')
 
     df = pd.concat(standardised_data_dict.values(), ignore_index=True)
-    column_order = ['type', 'dashboard_date', 'state_code', 'district_code', 'subdistrict_code', 'ulb_code', 'village_code',
-                    'zone_name', 'ward_number', 'phc', 'subcenter', 'lat', 'lng', 'age', 'gender', 'test_method',
-                    'case_type', 'district_name', 'subdistrict_name', 'village_name', 'year']
 
-    df["type"] = "individual"
-    df["dashboard_date"] = df["event.symptomOnsetDate"].fillna(df["event.test.sampleCollectionDate"]).fillna(df["event.test.resultDate"])
-    df["dashboard_date"] = pd.to_datetime(df["dashboard_date"], errors='coerce')
-    df["dashboard_date"] = df["dashboard_date"].apply(sanity)
+    if version == "v2":
+        df["metadata.primaryDate"] = df["event.symptomOnsetDate"].fillna(df["event.test.sampleCollectionDate"]).fillna(df["event.test.resultDate"])  # noqa: E501
+        return df
+    elif version == "v1":
 
-    df["district_code"] = df["location.district.ID"].apply(id2code)
-    df["subdistrict_code"] = df["location.subdistrict.ID"].apply(id2code)
-    df["village_code"] = df["location.village.ID"].apply(id2code)
+        message = "The v1 format for Linelists is deprecated, and will not be supported in future releases."  # noqa
+        warnings.warn(message, DeprecationWarning, stacklevel=3)
 
-    df["district_name"] = df["location.district.name"]
-    df["subdistrict_name"] = df["location.subdistrict.name"]
-    df["village_name"] = df["location.village.name"]
+        column_order = ['type', 'dashboard_date', 'state_code', 'district_code', 'subdistrict_code', 'ulb_code', 'village_code',
+                        'zone_name', 'ward_number', 'phc', 'subcenter', 'lat', 'lng', 'age', 'gender', 'test_method',
+                        'case_type', 'district_name', 'subdistrict_name', 'village_name', 'year']
 
-    df['state_code'] = 29
+        df["type"] = "individual"
+        df["dashboard_date"] = df["event.symptomOnsetDate"].fillna(df["event.test.sampleCollectionDate"]).fillna(df["event.test.resultDate"])  # noqa: E501
+        df["dashboard_date"] = pd.to_datetime(df["dashboard_date"], errors='coerce')
+        df["dashboard_date"] = df["dashboard_date"].apply(sanity)
 
-    empty_cols = ['zone_name', 'ward_number',
-                  'phc', 'subcenter',
-                  'lat', 'lng', 'year', 'test_method', 'ulb_code']
-    for empty_col in empty_cols:
+        df["district_code"] = df["location.district.ID"].apply(id2code)
+        df["subdistrict_code"] = df["location.subdistrict.ID"].apply(id2code)
+        df["village_code"] = df["location.village.ID"].apply(id2code)
 
-        df[empty_col] = None
+        df["district_name"] = df["location.district.name"]
+        df["subdistrict_name"] = df["location.subdistrict.name"]
+        df["village_name"] = df["location.village.name"]
 
-    df["age"] = df["demographics.age"]
-    df["gender"] = df["demographics.gender"]
-    df["case_type"] = "confirmed"
+        df['state_code'] = 29
 
-    df = df[column_order]
+        empty_cols = ['zone_name', 'ward_number',
+                      'phc', 'subcenter',
+                      'lat', 'lng', 'year', 'test_method', 'ulb_code']
+        for empty_col in empty_cols:
+
+            df[empty_col] = None
+
+        df["age"] = df["demographics.age"]
+        df["gender"] = df["demographics.gender"]
+        df["case_type"] = "confirmed"
+
+        df = df[column_order]
 
     return df
 
@@ -136,9 +145,9 @@ def standardise_ka_linelist_v1(preprocessed_data_dict, regionIDs_dict,
 
 def get_ka_daily_summary_v1(summary):
 
-    message = "The v1 format for Daily Summaries is outdated, and will not be supported in future releases."  # noqa
-
+    message = "The v1 format for Daily Summaries is deprecated, and will not be supported in future releases."  # noqa
     warnings.warn(message, DeprecationWarning, stacklevel=3)
+
     # Convert to v1
     summary["type"] = "summary"
     summary["state_code"] = 29

@@ -2,7 +2,7 @@
 
 This repository contains code that can be used to standardise linelists and summaries.
 
-This is a WIP.
+This is a WIP. Minor edit.
 
 The standards currently used are:
 

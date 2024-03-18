@@ -25,7 +25,7 @@ def get_regionIDs(regionIDs_ds_info=None):
     return regionIDs_df, regionIDs_dict
 
 
-def get_children(regionID, childType=None, regionIDs_df=None, regionIDs_dict=None, deep=False,
+def get_children(regionID, childType=None, regionIDs_df=None, deep=False,
                  hierarchy_type=None, downloadshp=False, shpdir="shapefiles/"):
     """
     Get children regions based on provided region ID and optional parameters.
@@ -36,8 +36,6 @@ def get_children(regionID, childType=None, regionIDs_df=None, regionIDs_dict=Non
                                   Defaults to None.
     - regionIDs_df (DataFrame, optional): DataFrame containing region IDs and parent IDs.
                                           Defaults to None.
-    - regionIDs_dict (dict, optional): Dictionary containing region IDs and parent IDs.
-                                       Defaults to None.
     - deep (bool, optional): If True, retrieves children recursively for each child.
                               Defaults to False.
     - hierarchy_type (str, optional): Type of hierarchy to consider for region types.

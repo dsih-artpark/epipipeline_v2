@@ -79,6 +79,10 @@ def clean_test_method(series, test_type):
     return contains_keywords_series
 
 
+# def standardise_retrospective_ka_linelist(year, regionIDs_dict, regionIDs_df, accepted_headers):
+#    pass
+
+
 def standardise_ka_linelist_v1(preprocessed_data_dict, regionIDs_dict,
                                regionIDs_df, thresholds, year, accepted_headers, version="v2"):
 
@@ -130,9 +134,8 @@ def standardise_ka_linelist_v1(preprocessed_data_dict, regionIDs_dict,
 
     missing_cols = list(missing_cols)
 
-    df = df.drop(columns=missing_cols, errors='ignore')
-
     df = pd.concat(standardised_data_dict.values(), ignore_index=True)
+    df = df.drop(columns=missing_cols, errors='ignore')
 
     if version == "v2":
         df["metadata.primaryDate"] = df["event.symptomOnsetDate"].fillna(df["event.test.sampleCollectionDate"]).fillna(df["event.test.resultDate"])  # noqa: E501
@@ -141,7 +144,6 @@ def standardise_ka_linelist_v1(preprocessed_data_dict, regionIDs_dict,
         headers = sorted(headers, key=accepted_headers.index)
         df = df[headers]
 
-        return df
     elif version == "v1":
 
         message = "The v1 format for Linelists is deprecated, and will not be supported in future releases."  # noqa
@@ -178,6 +180,9 @@ def standardise_ka_linelist_v1(preprocessed_data_dict, regionIDs_dict,
         df["case_type"] = "confirmed"
 
         df = df[column_order]
+
+    else:
+        raise ValueError(f"Version {version} is invalid or not supported.")
 
     return df
 
@@ -413,3 +418,7 @@ def update_summaries_by_day_on_S3(raw_URI_Prefix, std_URI_Prefix, year, metadata
                 dse_all += dse
 
     return dse_all
+
+
+if __name__ == "__main__":
+    pass

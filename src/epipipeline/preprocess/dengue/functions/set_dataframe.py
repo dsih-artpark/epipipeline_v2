@@ -14,8 +14,6 @@ def search_header(L: list, pivot_col_name) -> bool:
     """
     assert isinstance(L,list) and isinstance(pivot_col_name,str), "Invalid input"
 
-    import re
-
     header_search=True
     pivot_col_name=pivot_col_name.lstrip().rstrip()
     for column in L:

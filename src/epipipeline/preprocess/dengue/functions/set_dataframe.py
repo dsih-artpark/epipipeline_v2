@@ -13,7 +13,7 @@ def search_header(L: list, pivot_col_name) -> bool:
         bool: Whether header was identified
     """
     assert isinstance(L,list) and isinstance(pivot_col_name,str), "Invalid input"
-    
+
     header_search=True
     pivot_col_name=pivot_col_name.lstrip().rstrip()
     for column in L:

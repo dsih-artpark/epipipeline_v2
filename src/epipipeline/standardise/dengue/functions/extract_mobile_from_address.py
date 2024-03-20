@@ -1,3 +1,5 @@
+import pandas as pd
+import re
 
 def extract_mobile_from_address(address: str):
     """This function extracts mobile number from the address/name fields and strips the name/address from the mobile number field
@@ -9,9 +11,6 @@ def extract_mobile_from_address(address: str):
         pd.Series: DataFrame series of address & mobile number
     """
     assert isinstance(address, str), "Invalid input"
-
-    import pandas as pd
-    import re
 
     mobile_present=re.search(r"(9?1?\d{10})", address)
 

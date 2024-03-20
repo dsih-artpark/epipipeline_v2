@@ -1,3 +1,5 @@
+import pandas as pd
+import uuid
 
 def assign_uuid(n: int):
     """_summary_
@@ -9,9 +11,6 @@ def assign_uuid(n: int):
         pd.Series: series of uuid4 of length n; named metadata.recordID
     """
     assert isinstance(n, int), "Invalid Input: Enter an integer"
-    
-    import pandas as pd
-    import uuid
 
     return pd.Series([uuid.uuid4() for i in range(n)], name="metadata.recordID")
 

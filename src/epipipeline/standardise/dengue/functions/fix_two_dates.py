@@ -2,7 +2,7 @@ import pandas as pd
 import datetime
 
 def date_fix(df: pd.Series) -> pd.Series:
-    """_summary_: Fixes logical inconsistency in dates - Sample date > Result date
+    """_summary_: Attempts to fix logical inconsistency in dates - Sample date > Result date
 
     Args:
         sampleDate (_type_): Sample Date in datetime format

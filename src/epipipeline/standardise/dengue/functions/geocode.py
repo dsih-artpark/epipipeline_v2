@@ -10,10 +10,10 @@ import os
 
 load_dotenv()
 
-try:
-    MyAPI=os.getenv("GMAPS_API")
-except:
-    raise (".env var not found. Store your GMAPS API in a .env file with varname GMAPS_API")
+MyAPI=os.getenv("GMAPS_API")
+
+if MyAPI=="":
+    raise ValueError (".env var not found. Store your GMAPS API in a .env file with varname GMAPS_API")
 
 # Method 2 - Run this if you have encrypted the API key locally
 import subprocess

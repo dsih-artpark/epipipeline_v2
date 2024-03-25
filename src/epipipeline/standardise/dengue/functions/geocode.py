@@ -42,9 +42,21 @@ def geocode(full_address: str, MyAPI: str) -> tuple:
     """
     assert isinstance(full_address, str) and isinstance(MyAPI,str) and len(MyAPI)==39, "invalid input"
     gmaps = googlemaps.Client(key=MyAPI)
-    geocode_result = gmaps.geocode(full_address)
-    lat= geocode_result[0]['geometry']['location'] ['lat']
-    long= geocode_result[0]['geometry']['location']['lng']
-    return pd.Series([lat,long])
+    try:
+        geocode_result = gmaps.geocode(full_address)
+        if geocode_result:
+            lat= geocode_result[0]['geometry']['location'] ['lat']
+            long= geocode_result[0]['geometry']['location']['lng']
+            return lat, long
+        else:
+            raise Exception("geocoding failed")
+    except Exception as e:
+        print(f"Unable to geocode {full_address}")
+    return None,None
+
+# run function
+
+# Apply function
+# df["location.geometry.latitude.imputed"], df["location.geometry.longitude.imputed"] = zip(df["full_address"].apply(lambda x: geocode(x, MyAPI)))
 
 

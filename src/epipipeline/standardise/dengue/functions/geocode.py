@@ -25,7 +25,7 @@ encrypted_file = "~/config.enc"
 command = f"openssl aes-256-cbc -d -salt -in {encrypted_file}"
 
 try:
-    MyAPI=subprocess.check_output(command, shell=True, text=True)
+    MyAPI=subprocess.check_output(command, shell=True, text=True).strip()
 except subprocess.CalledProcessError as e:
     raise(e)
 

@@ -1,7 +1,7 @@
 import pandas as pd
 import uuid
 
-def assign_uuid(n: int):
+def AssignUUID(n: int):
     """_summary_
 
     Args:

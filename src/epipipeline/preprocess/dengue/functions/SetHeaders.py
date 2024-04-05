@@ -2,7 +2,7 @@ import pandas as pd
 import re
 
 
-def search_header(L: list, pivot_col_name) -> bool:
+def SearchHeader(L: list, pivot_col_name) -> bool:
     """This function identifies the header row in a dataframe
 
     Args:
@@ -22,7 +22,7 @@ def search_header(L: list, pivot_col_name) -> bool:
             break
     return header_search
 
-def set_headers(df: pd.DataFrame, pivot_column: str, col_start_index: int, col_start_value):
+def SetHeaders(df: pd.DataFrame, pivot_column: str, col_start_index: int, col_start_value):
     """_summary_
 
     Args:
@@ -35,7 +35,7 @@ def set_headers(df: pd.DataFrame, pivot_column: str, col_start_index: int, col_s
 
 # sets the dataframe's row start
     i=0
-    while search_header(list(df.columns), pivot_column) and (i<6):  # change pivot column here, if needed
+    while SearchHeader(list(df.columns), pivot_column) and (i<6):  # change pivot column here, if needed
         df.columns=df.iloc[i,:]
         i+=1
     df.drop(axis=0, index=[n for n in range(i)], inplace=True)

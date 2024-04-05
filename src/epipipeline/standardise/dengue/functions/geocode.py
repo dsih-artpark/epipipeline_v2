@@ -2,6 +2,7 @@ import pandas as pd
 from googlemaps import Client as GoogleMaps
 import googlemaps
 import gmaps
+import numpy as np
 
 # 2 ways to retrieve API key - env file or local encryption
 # Method 1 - Run this if you have set the API key in a .env file
@@ -31,7 +32,7 @@ except subprocess.CalledProcessError as e:
 
 # Geocoding function
 
-def geocode(full_address: str, MyAPI: str) -> tuple:
+def Geocode(full_address: str, MyAPI: str) -> tuple:
     """_summary_
 
     Args:
@@ -52,11 +53,4 @@ def geocode(full_address: str, MyAPI: str) -> tuple:
             raise Exception("geocoding failed")
     except Exception as e:
         print(f"Unable to geocode {full_address}")
-    return None,None
-
-# run function
-
-# Apply function
-# df["location.geometry.latitude.imputed"], df["location.geometry.longitude.imputed"] = zip(df["full_address"].apply(lambda x: geocode(x, MyAPI)))
-
-
+    return np.nan,np.nan

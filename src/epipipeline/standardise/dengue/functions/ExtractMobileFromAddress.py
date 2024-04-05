@@ -1,7 +1,7 @@
 import pandas as pd
 import re
 
-def extract_mobile_from_address(address: str):
+def ExtractMobileFromAddress(address: str):
     """This function extracts mobile number from the address/name fields and strips the name/address from the mobile number field
 
     Args:

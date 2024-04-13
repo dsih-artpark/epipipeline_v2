@@ -1,5 +1,7 @@
-def MapColumns(colname:str, map_dict: dict) -> str: 
-    """_summary_
+import re
+
+def map_columns(colname:str, map_dict: dict) -> str: 
+    """_summary_Standardises column names using mapping in config file
 
     Args:
         colname (str): Current column in DataFrame
@@ -8,6 +10,10 @@ def MapColumns(colname:str, map_dict: dict) -> str:
     Returns:
         str: Standardised column name
     """
+
+    colname=re.sub(r"[^\w\s]","", colname.lstrip().rstrip().lower())
+    colname=re.sub(r"(\s+)"," ", colname)
+    colname=re.sub(r"\s","_", colname)
 
     for key, values in map_dict.items():
         if colname in values:

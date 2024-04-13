@@ -28,7 +28,15 @@ def standardise_age(age):
     else:
         return np.nan
 
-def standardise_age2(age):
+def standardise_age2(age) -> float:
+    """Converts mixed age entries to a standard float 
+
+    Args:
+        age (str/float/int): age specified in the raw dataset
+
+    Returns:
+        float: standardised age 
+    """
     if isinstance(age, str):
         pattern = r'^(\d+\.?\d*) *([ym]?[ |.|,|-]?.*)?$'
         match = re.search(pattern, age)
@@ -77,3 +85,24 @@ def standardise_gender(gender):
     best_match = max(matches, key=lambda x: x[1])
 
     return best_match[0]
+
+
+def standardise_gender2(gender:str)->str:
+    """Converts mixed gender entries to a standard format
+
+    Args:
+        gender (str): gender entries in the raw dataset
+
+    Returns:
+        str: standardised gender (FEMALE, MALE, UNKNOWN)
+    """
+    gender = str(gender).upper().lstrip().rstrip()
+
+    if re.search(r'[fwgFWG]', gender):
+        gender="FEMALE"
+    elif re.search(r'^[mbMB]', gender):
+        gender='MALE'
+    else:
+        return 'UNKNOWN'
+
+    return gender

@@ -1,5 +1,6 @@
 import pandas as pd
 import re
+import numpy as np
 
 def extract_mobile_from_address(address: str) -> tuple:
     """This function extracts mobile number from the address/name fields and strips the name/address from the mobile number field
@@ -18,6 +19,6 @@ def extract_mobile_from_address(address: str) -> tuple:
         mobile_number=mobile_present.group(1)
         address=re.sub(r"9?1?\d{10}","", address)
     else:
-        mobile_number=pd.NA
+        mobile_number=np.nan
     
     return (address, mobile_number)

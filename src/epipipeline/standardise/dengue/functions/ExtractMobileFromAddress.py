@@ -1,14 +1,14 @@
 import pandas as pd
 import re
 
-def ExtractMobileFromAddress(address: str):
+def extract_mobile_from_address(address: str) -> tuple:
     """This function extracts mobile number from the address/name fields and strips the name/address from the mobile number field
 
     Args:
         address (str): Name & Address in KA, and Address in PMC, PCMC, pune Rural
 
     Returns:
-        pd.Series: DataFrame series of address & mobile number
+        tuple: DataFrame series of address & mobile number
     """
     assert isinstance(address, str), "Invalid input"
 
@@ -20,4 +20,4 @@ def ExtractMobileFromAddress(address: str):
     else:
         mobile_number=pd.NA
     
-    return pd.Series(address, mobile_number)
+    return (address, mobile_number)

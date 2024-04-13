@@ -28,6 +28,41 @@ def standardise_age(age):
     else:
         return np.nan
 
+def standardise_age2(age):
+    if isinstance(age, str):
+        pattern = r'^(\d+\.?\d*) *([ym]?[ |.|,|-]?.*)?$'
+        match = re.search(pattern, age)
+        if match:
+            if match.group(1):
+                if re.match(r'^\d{1,3}', match.group(1)):
+                    age = float(match.group(1))
+                else:
+                    return np.nan
+            else:
+                return np.nan
+            if match.group(2):
+                if re.match('^[m|M].*', match.group(2)):
+                    if age<13:
+                        return round(age / 12, 2)
+                    else:
+                        return age
+                elif re.match(r'^[y|Y]\D*\d{1,2}[m|M]', match.group(2)):
+                    month_match=re.match(r'^[y|Y]\D*(\d{1,2})[m|M]', match.group(2))
+                    if month_match.group(1):
+                        month=round(float(month_match.group(1))/ 12, 2)
+                        age+=month
+                        return age
+                else:
+                    return age
+            return age
+        else:
+            return np.nan
+    elif isinstance(age, int):
+        return float(age)
+    elif isinstance(age,float):
+        return age
+    else:
+        return np.nan
 
 def standardise_gender(gender):
     standard_genders = ['MALE', 'FEMALE']

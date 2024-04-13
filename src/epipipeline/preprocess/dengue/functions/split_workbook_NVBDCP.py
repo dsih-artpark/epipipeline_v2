@@ -3,7 +3,7 @@ import os
 import re
 import datetime
 
-def SplitWorkbookNVBDCP(workbook_name:str) -> bool:
+def split_workbook_NVBDCP(workbook_name:str) -> bool:
     """This function splits the NVBDCP Raw Line list into individual csvs by source.
 
     Args:

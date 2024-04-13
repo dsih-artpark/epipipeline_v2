@@ -1,7 +1,7 @@
 import re
 
 def map_columns(colname:str, map_dict: dict) -> str: 
-    """_summary_Standardises column names using mapping in config file
+    """This function standardises column names using mapping in config file
 
     Args:
         colname (str): Current column in DataFrame

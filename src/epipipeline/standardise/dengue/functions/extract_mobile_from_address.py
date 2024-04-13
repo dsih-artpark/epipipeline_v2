@@ -2,7 +2,7 @@ import pandas as pd
 import re
 import numpy as np
 
-def extract_mobile_from_address(address: str) -> tuple:
+def extract_contact(address: str) -> tuple:
     """This function extracts mobile number from the address/name fields and strips the name/address from the mobile number field
 
     Args:

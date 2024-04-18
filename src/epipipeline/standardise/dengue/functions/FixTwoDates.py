@@ -1,7 +1,7 @@
 import pandas as pd
 import datetime
 
-def date_fix(df: pd.Series) -> pd.Series:
+def FixTwoDates(resultDate: datetime, sampleDate:datetime) -> pd.Series:
     """_summary_: Attempts to fix logical inconsistency in dates - Sample date > Result date
 
     Args:
@@ -11,8 +11,8 @@ def date_fix(df: pd.Series) -> pd.Series:
     Returns:
         _type_: If logical errors can be fixed, returns updated date(s). Else, returns original dates.
     """
-    resultDate=df[resultDate]
-    sampleDate=df[sampleDate]
+    
+    isinstance(resultDate, datetime) and isinstance(sampleDate, datetime), "Format the dates before applying this function"
     delta=resultDate-sampleDate
     
     if (pd.Timedelta(60, "d") < delta ) | (delta < pd.Timedelta(0, "d")):

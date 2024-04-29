@@ -15,7 +15,6 @@ import re
 import requests
 import yaml
 
-
 pd.set_option('future.no_silent_downcasting', True)
 
 
@@ -135,7 +134,7 @@ def standardise_ka_linelist_v1(preprocessed_data_dict, regionIDs_dict,
     missing_cols = list(missing_cols)
 
     df = pd.concat(standardised_data_dict.values(), ignore_index=True)
-    df = df.drop(columns=missing_cols, errors='ignore')
+    # df = df.drop(columns=missing_cols, errors='ignore')
 
     if version == "v2":
         df["metadata.primaryDate"] = df["event.symptomOnsetDate"].fillna(df["event.test.sampleCollectionDate"]).fillna(df["event.test.resultDate"])  # noqa: E501

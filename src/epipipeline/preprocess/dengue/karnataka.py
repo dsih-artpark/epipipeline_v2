@@ -164,6 +164,7 @@ def preprocess_ka_linelist_v2(*,
             if no_merge_headers[districtID] == "merged_ns1_igm_col_headers":
                 headers = list(df.iloc[0].fillna("igm positive"))
                 df = df.iloc[1:].reset_index(drop=True)
+                logger.debug(f"{headers} are the headers found for district {districtID} - {districtName}")
             else:
                 headers = list(df.iloc[0])
                 df = df.iloc[1:].reset_index(drop=True)
@@ -224,7 +225,7 @@ def preprocess_ka_linelist_v2(*,
                 igm_results = ["True" if x == 'elisa' else np.nan for x in cleaned_results]
 
                 df["event.test.test1.result"] = ns1_results
-                df["event.test.test1.result"] = igm_results
+                df["event.test.test2.result"] = igm_results
 
         columns = df.columns.to_list()
         if "metadata.nameAddress" not in columns:

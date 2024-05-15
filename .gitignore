@@ -143,3 +143,6 @@ dmypy.json
 
 # All Data Files
 *.csv
+data/**
+testing.py
+_src/**

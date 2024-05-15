@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import warnings
 from typing import Optional
 
 import numpy as np
@@ -117,12 +118,11 @@ def preprocess_ka_linelist_v2(*,
                               standard_mapper,
                               default_values,
                               accepted_headers,
-                              required_headers,
-                              verbose=False):
+                              required_headers):
 
     error = []
     preprocessed_data_dict = {}
-
+    all_districts_data_flag = True # Flag to track if all districts have data
     # Iterate through each district in the raw data
     for districtID in raw_data_dict.keys():
 
@@ -135,10 +135,8 @@ def preprocess_ka_linelist_v2(*,
 
         # First Check for empty sheet
         if len(df) <= 1:
-            e = "District " + districtName + " (" + districtID + ") has no data."
-            error.append(e)
-            if verbose:
-                print(e)
+            warnings.warn(f'District f{districtName} ("{districtID}") has no data.', stacklevel=2)
+            all_districts_data_flag = False
             continue
 
         # To account for empty excel sheets with one lone value in the 10000th row
@@ -152,10 +150,8 @@ def preprocess_ka_linelist_v2(*,
             k = k + 1
 
         if k == 5:
-            e = "District " + districtName + " (" + districtID + ") has no data."
-            error.append(e)
-            if verbose:
-                print(e)
+            warnings.warn(f'District f{districtName} ("{districtID}") has no data.', stacklevel=2)
+            all_districts_data_flag = False
             continue
 
         # Some districts have different header styles.
@@ -255,13 +251,14 @@ def preprocess_ka_linelist_v2(*,
         absent_headers = [head for head in required_headers if head not in df.columns.to_list()]
 
         if len(absent_headers) > 0:
-            e = "District " + districtName + " (" + districtID + \
-                ") is missing " + str(len(absent_headers)) + " header(s): " + \
-                ", ".join(absent_headers) + "."
-            error.append(e)
-            if verbose:
-                print(e)
+            warnings.warn(f"District {districtName} ({districtID}) is missing {len(absent_headers)!s} header(s): f{', '.join(absent_headers)!s}.", stacklevel=2) # noqa: E501
+        else:
+            logger.info(f"All headers found for district {districtName} ({districtID})")
 
         preprocessed_data_dict[districtID] = df
 
+    if all_districts_data_flag:
+        logger.info("All districts have data.")
+
+    logger.info("Returning preprocessed data")
     return preprocessed_data_dict, error

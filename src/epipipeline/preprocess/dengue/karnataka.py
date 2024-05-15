@@ -230,13 +230,13 @@ def preprocess_ka_linelist_v2(*,
         if "metadata.nameAddress" not in columns:
             if "metadata.name" in columns and "metadata.address" in columns:
                 df['metadata.nameAddress'] = df['metadata.name'].fillna("").astype(str) + " " + df['metadata.address'].fillna("").astype(str) # noqa: E501
-                df = df.drop(["metadata.name", "metadata.address"])
+                df = df.drop(columns=["metadata.name", "metadata.address"])
             elif "metadata.address" in columns:
                 df["metadata.nameAddress"] = df["metadata.address"]
-                df = df.drop(["metadata.address"])
+                df = df.drop(columns=["metadata.address"])
             else:
                 df["metadata.nameAddress"] = df["metadata.name"]
-                df = df.drop(["metadata.name"])
+                df = df.drop(columns=["metadata.name"])
 
 
         for field, value in default_values.items():

@@ -258,7 +258,8 @@ def preprocess_ka_linelist_v2(*,
             if verbose:
                 print(e)
 
-        df["location.district.ID"] = districtID
+        df["location.admin2.ID"] = districtID
+        df["location.admin2.name"] = districtName
         preprocessed_data_dict[districtID] = df
 
     return preprocessed_data_dict, error

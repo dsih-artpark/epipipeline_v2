@@ -161,7 +161,7 @@ def preprocess_ka_linelist_v2(*,
         # Some districts have different header styles.
         # This includes a single row header, and other smaller incongruities.
         if districtID in no_merge_headers.keys():
-            if no_merge_headers[districtID] == "merged_ns1_igm_col_headers":
+            if no_merge_headers[districtID] == "merged_ns1_igm_col_header":
                 headers = list(df.iloc[0].fillna("igm positive"))
                 df = df.iloc[1:].reset_index(drop=True)
                 logger.debug(f"{headers} are the headers found for district {districtID} - {districtName}")
@@ -243,6 +243,9 @@ def preprocess_ka_linelist_v2(*,
         for field, value in default_values.items():
             df[field] = value
 
+        df["location.admin2.ID"] = districtID
+        df["location.admin2.name"] = districtName
+
         # Only taking accepted columns, and ordering as per datadictionary
         headers = [head for head in df.columns.to_list() if head in accepted_headers]
         headers = sorted(headers, key=accepted_headers.index)
@@ -259,8 +262,6 @@ def preprocess_ka_linelist_v2(*,
             if verbose:
                 print(e)
 
-        df["location.admin2.ID"] = districtID
-        df["location.admin2.name"] = districtName
         preprocessed_data_dict[districtID] = df
 
     return preprocessed_data_dict, error

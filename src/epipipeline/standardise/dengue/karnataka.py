@@ -54,25 +54,25 @@ def standardise_ka_linelist_v3(*,
 
         # Standardise case variables
         ## OPD, IPD
-        if "case.opdOrIpd" not in df.columns():
+        if "case.opdOrIpd" not in df.columns.to_list():
             logger.info(f"District {districtName} ({districtID}) does not have OPD-IPD info")
         else:
             df["case.opdOrIpd'"]=df["case.opdOrIpd'"].apply(lambda x: opd_ipd(x))
 
         ## PUBLIC, PRIVATE
-        if "case.publicOrPrivate" not in df.columns():
+        if "case.publicOrPrivate" not in df.columns.to_list():
             logger.info(f"District {districtName} ({districtID}) does not have Public-Private info")
         else:
             df["case.publicOrPrivate"]=df["case.publicOrPrivate"].apply(lambda x: public_private(x))
 
         ## ACTIVE, PASSIVE
-        if "case.surveillance" not in df.columns():
+        if "case.surveillance" not in df.columns.to_list():
             logger.info(f"District {districtName} ({districtID}) does not have Active-Passive Surveillance info")
         else:
             df["case.surveillance"]=df["case.surveillance"].apply(lambda x: active_passive(x))
 
         # URBAN, RURAL
-        if "case.urbanOrRural" not in df.columns():
+        if "case.urbanOrRural" not in df.columns.to_list():
             logger.info(f"District {districtName} ({districtID}) does not have Urban vs Rural info")
         else:
             df["case.urbanOrRural"]=df["case.urbanOrRural"].apply(lambda x: rural_urban(x))

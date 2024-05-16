@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 import pandas as pd
@@ -17,12 +18,20 @@ from epipipeline.standardise import (
 from epipipeline.standardise.dates import fix_symptom_date, fix_two_dates, string_clean_dates  # , fix_year_hist
 from epipipeline.standardise.gis import subdist_ulb_mapping, village_ward_mapping
 
+# Set up logging
+logger = logging.getLogger("epipipeline.standardise.dengue.karnataka")
 
-def standardise_ka_linelist_v3(*, preprocessed_data_dict, CURRENT_YEAR, THRESHOLDS, STR_VARS, regionIDs_df, tagDate=None):
+# Capture warnings and redirect them to the logging system
+logging.captureWarnings(True)
+
+def standardise_ka_linelist_v3(*,
+                               preprocessed_data_dict, CURRENT_YEAR, THRESHOLDS, STR_VARS,
+                               regionIDs_df, regionIDs_dict, tagDate=None):
 
     standardise_data_dict = dict()
     for districtID in preprocessed_data_dict.keys():
 
+        districtName = regionIDs_dict[districtID]
         df = preprocessed_data_dict[districtID].copy()
         df["demographics.age"]=df["demographics.age"].apply(lambda x: standardise_age(x))
 
@@ -45,16 +54,28 @@ def standardise_ka_linelist_v3(*, preprocessed_data_dict, CURRENT_YEAR, THRESHOL
 
         # Standardise case variables
         ## OPD, IPD
-        df["case.opdOrIpd'"]=df["case.opdOrIpd'"].apply(lambda x: opd_ipd(x))
+        if "case.opdOrIpd" not in df.columns():
+            logger.info(f"District {districtName} ({districtID}) does not have OPD-IPD info")
+        else:
+            df["case.opdOrIpd'"]=df["case.opdOrIpd'"].apply(lambda x: opd_ipd(x))
 
         ## PUBLIC, PRIVATE
-        df["case.publicOrPrivate"]=df["case.publicOrPrivate"].apply(lambda x: public_private(x))
+        if "case.publicOrPrivate" not in df.columns():
+            logger.info(f"District {districtName} ({districtID}) does not have Public-Private info")
+        else:
+            df["case.publicOrPrivate"]=df["case.publicOrPrivate"].apply(lambda x: public_private(x))
 
         ## ACTIVE, PASSIVE
-        df["case.surveillance"]=df["case.surveillance"].apply(lambda x: active_passive(x))
+        if "case.surveillance" not in df.columns():
+            logger.info(f"District {districtName} ({districtID}) does not have Active-Passive Surveillance info")
+        else:
+            df["case.surveillance"]=df["case.surveillance"].apply(lambda x: active_passive(x))
 
         # URBAN, RURAL
-        df["case.urbanOrRural"]=df["case.urbanOrRural"].apply(lambda x: rural_urban(x))
+        if "case.urbanOrRural" not in df.columns():
+            logger.info(f"District {districtName} ({districtID}) does not have Urban vs Rural info")
+        else:
+            df["case.urbanOrRural"]=df["case.urbanOrRural"].apply(lambda x: rural_urban(x))
 
         # Fix date variables
         datevars=["event.symptomOnsetDate", "event.test.sampleCollectionDate","event.test.resultDate"]

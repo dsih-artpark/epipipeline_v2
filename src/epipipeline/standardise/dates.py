@@ -182,6 +182,8 @@ def check_date_to_today(*, date, tagDate=None):
     if tagDate is None:
         tagDate = datetime.datetime.today()
 
-    if date > tagDate:
+    if pd.isna(date):
+        return pd.NA
+    elif date > tagDate:
         # logger.warning(f"Found a date greater than today in {districtName} ({districtID}). Removing...")
         return pd.NaT

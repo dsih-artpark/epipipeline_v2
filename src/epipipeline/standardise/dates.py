@@ -187,3 +187,5 @@ def check_date_to_today(*, date, tagDate=None):
     elif date > tagDate:
         # logger.warning(f"Found a date greater than today in {districtName} ({districtID}). Removing...")
         return pd.NaT
+    else:
+        return date

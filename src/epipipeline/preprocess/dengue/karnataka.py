@@ -119,30 +119,65 @@ def preprocess_ka_linelist_v2(*,
                               default_values,
                               accepted_headers,
                               required_headers):
+    """
+    Preprocess raw district-level data into a standardised format for analysis.
 
-    error = []
+    Args:
+        raw_data_dict (dict): Dictionary containing raw data for each district.
+        regionIDs_dict (dict): Dictionary mapping district IDs to region information.
+        no_merge_headers (dict): Dictionary specifying districts with different header styles.
+        district_specific_errors (dict): Dictionary containing header correction mappings for specific districts.
+        standard_mapper (dict): Dictionary mapping standard header names to potential variants.
+        default_values (dict): Dictionary of default values to be set for specific fields.
+        accepted_headers (list): List of headers that are accepted in the final dataset.
+        required_headers (list): List of headers that are required in the final dataset.
+
+    Returns:
+        dict: Preprocessed data dictionary with cleaned and standardised data for each district.
+
+    The function performs the following steps for each district:
+        1. Create a copy of the raw data to avoid mutating the original.
+        2. Drop empty rows and columns from the data.
+        3. Check for empty sheets and skip them if found.
+        4. Adjust header rows based on district-specific header styles.
+        5. Clean headers by removing special characters and extraneous spaces.
+        6. Correct any header errors specific to the district.
+        7. Standardise column names to match the accepted headers.
+        8. Separate columns for NS1 and IgM test results if specified.
+        9. Combine metadata fields for name and address if necessary.
+        10. Fill default values for specified fields.
+        11. Add district-level metadata.
+        12. Filter and order columns based on accepted headers.
+        13. Check for missing required headers and log warnings if any.
+        14. Log the success of the preprocessing for each district and overall.
+    """
     preprocessed_data_dict = {}
-    all_districts_data_flag = True # Flag to track if all districts have data
+    all_districts_data_flag = True  # Flag to track if all districts have data
+
     # Iterate through each district in the raw data
     for districtID in raw_data_dict.keys():
-
+        logger.info(f"Processing district {districtID}")
         districtName = regionIDs_dict[districtID]["regionName"]
 
         # BASIC CLEANING
 
-        df = raw_data_dict[districtID].copy()  # Create a copy - you don't want to mutate the original dictionary
-        df = df.dropna(how='all').dropna(axis=1, how='all') # Drop empty rows and columns
+        # Create a copy of the raw data to avoid mutating the original dictionary
+        df = raw_data_dict[districtID].copy()
+        # Drop empty rows and columns
+        df = df.dropna(how='all').dropna(axis=1, how='all')
 
-        # First Check for empty sheet
+        logger.debug(f"Initial shape of data for district {districtID}: {df.shape}")
+
+        # First check for empty sheet
         if len(df) <= 1:
-            warnings.warn(f'District f{districtName} ("{districtID}") has no data.', stacklevel=2)
+            warnings.warn(f'District {districtName} ("{districtID}") has no data.', stacklevel=2)
             all_districts_data_flag = False
             continue
 
         # To account for empty excel sheets with one lone value in the 10000th row
         # Placing a semi-arbitrary cap of 5:
         # Any more than 5 rows with less than 12 values disqualifies the sheet
-        # This also drops rows that have only cell in them filled at the start, like headings
+        # This also drops rows that have only one cell filled at the start, like headings
         min_cols = 12
         k = 0
         while (df.iloc[0].notnull().sum() < min_cols) and (k < 5):
@@ -150,12 +185,11 @@ def preprocess_ka_linelist_v2(*,
             k = k + 1
 
         if k == 5:
-            warnings.warn(f'District f{districtName} ("{districtID}") has no data.', stacklevel=2)
+            warnings.warn(f'District {districtName} ("{districtID}") has no data.', stacklevel=2)
             all_districts_data_flag = False
             continue
 
-        # Some districts have different header styles.
-        # This includes a single row header, and other smaller incongruities.
+        # Handle districts with different header styles
         if districtID in no_merge_headers.keys():
             if no_merge_headers[districtID] == "merged_ns1_igm_col_header":
                 headers = list(df.iloc[0].fillna("igm positive"))
@@ -170,7 +204,6 @@ def preprocess_ka_linelist_v2(*,
                        for head1, head2 in zip(df.iloc[0].fillna(""), df.iloc[1].fillna(""))
                        ]
             df = df.iloc[2:].reset_index(drop=True)
-
 
         # Clean all headers, remove special characters
         for i in range(len(headers)):
@@ -187,7 +220,9 @@ def preprocess_ka_linelist_v2(*,
 
             headers[i] = head
 
+        # Set cleaned headers to the dataframe
         df.columns = headers
+        logger.debug(f"Cleaned headers for district {districtID}: {headers}")
 
         # Correct any header errors specific to the districtID
         if districtID in district_specific_errors.keys():
@@ -197,18 +232,20 @@ def preprocess_ka_linelist_v2(*,
                 for option in name_options:
                     header_mapper[option] = standard_name
 
+            # Rename columns based on the mapping
             df = df.rename(columns=header_mapper)
+            logger.debug(f"Renamed columns for district {districtID} based on specific errors: {header_mapper}")
 
         # Rename all recognised columns to standard names
-
         header_mapper = {}
         for standard_name, name_options in standard_mapper.items():
             for option in name_options:
                 header_mapper[option] = standard_name
 
         df = df.rename(columns=header_mapper)
+        logger.debug(f"Renamed columns for district {districtID} to standard names: {header_mapper}")
 
-        # for raichur (546), separating columns for ns1 and igm
+        # Handle specific case for Raichur (546) to separate columns for NS1 and IgM
         if districtID in no_merge_headers.keys():
             if no_merge_headers[districtID] == "merged_ns1_igm_cols":
                 results = df["event.test.test1.result"].to_list()
@@ -222,43 +259,53 @@ def preprocess_ka_linelist_v2(*,
 
                 df["event.test.test1.result"] = ns1_results
                 df["event.test.test2.result"] = igm_results
+                logger.debug(f"Separated NS1 and IgM results for district {districtID}")
 
+        # Combine name and address if needed
         columns = df.columns.to_list()
         if "metadata.nameAddress" not in columns:
             if "metadata.name" in columns and "metadata.address" in columns:
-                df['metadata.nameAddress'] = df['metadata.name'].fillna("").astype(str) + " " + df['metadata.address'].fillna("").astype(str) # noqa: E501
+                df['metadata.nameAddress'] = df['metadata.name'].fillna("").astype(str) + " " + df['metadata.address'].fillna("").astype(str)  # noqa: E501
                 df = df.drop(columns=["metadata.name", "metadata.address"])
             elif "metadata.address" in columns:
                 df["metadata.nameAddress"] = df["metadata.address"]
                 df = df.drop(columns=["metadata.address"])
             else:
                 df["metadata.nameAddress"] = df["metadata.name"]
-                df = df.drop(columns=["metadata.name"])
+                df = df.drop(columns(["metadata.name"]))
+            logger.debug(f"Combined metadata name and address for district {districtID}")
 
-
+        # Set default values for specified fields
         for field, value in default_values.items():
             df[field] = value
+        logger.debug(f"Set default values for district {districtID}: {default_values}")
 
+        # Add district-level metadata
         df["location.admin2.ID"] = districtID
         df["location.admin2.name"] = districtName
 
-        # Only taking accepted columns, and ordering as per datadictionary
+        # Only take accepted columns, and order as per the data dictionary
         headers = [head for head in df.columns.to_list() if head in accepted_headers]
         headers = sorted(headers, key=accepted_headers.index)
 
         df = df[headers]
+        logger.debug(f"Filtered and ordered columns for district {districtID} based on accepted headers")
 
+        # Check for missing required headers
         absent_headers = [head for head in required_headers if head not in df.columns.to_list()]
 
         if len(absent_headers) > 0:
-            warnings.warn(f"District {districtName} ({districtID}) is missing {len(absent_headers)!s} header(s): f{', '.join(absent_headers)!s}.", stacklevel=2) # noqa: E501
+            warnings.warn(f"District {districtName} ({districtID}) is missing {len(absent_headers)!s} header(s): {', '.join(absent_headers)!s}.", stacklevel=2)  # noqa: E501
         else:
             logger.info(f"All headers found for district {districtName} ({districtID})")
 
+        # Add the preprocessed data to the dictionary
         preprocessed_data_dict[districtID] = df
 
+    # Check if all districts have data
     if all_districts_data_flag:
         logger.info("All districts have data.")
 
     logger.info("Returning preprocessed data")
-    return preprocessed_data_dict, error
+    return preprocessed_data_dict
+

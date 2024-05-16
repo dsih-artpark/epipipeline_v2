@@ -39,7 +39,7 @@ def standardise_ka_linelist_v3(*,
         df["demographics.age"]=df["demographics.age"].apply(lambda x: validate_age(x))
 
         # Bin Age
-        df["demographics.ageRange"]=pd.cut(df["demographics.age"].fillna(-999), bins=[0, 1, 6, 12, 18, 25, 45, 65, 105], include_lowest=False) # noqa: E501
+        df["demographics.ageRange"]=pd.cut(df["demographics.age"].astype(float).fillna(-999), bins=[0, 1, 6, 12, 18, 25, 45, 65, 105], include_lowest=False) # noqa: E501
         df.loc[df["demographics.age"].isna(), "demographics.ageRange"]=pd.NA
 
         # Standardise Gender - MALE, FEMALE, UNKNOWN
@@ -57,7 +57,7 @@ def standardise_ka_linelist_v3(*,
         if "case.opdOrIpd" not in df.columns.to_list():
             logger.info(f"District {districtName} ({districtID}) does not have OPD-IPD info")
         else:
-            df["case.opdOrIpd'"]=df["case.opdOrIpd'"].apply(lambda x: opd_ipd(x))
+            df["case.opdOrIpd"]=df["case.opdOrIpd"].apply(lambda x: opd_ipd(x))
 
         ## PUBLIC, PRIVATE
         if "case.publicOrPrivate" not in df.columns.to_list():

@@ -14,7 +14,7 @@ from epipipeline.standardise import (
     standardise_test_result,
     validate_age,
 )
-from epipipeline.standardise.dates import fix_symptom_date, fix_two_dates, fix_year_hist, string_clean_dates
+from epipipeline.standardise.dates import fix_symptom_date, fix_two_dates, string_clean_dates  # , fix_year_hist
 from epipipeline.standardise.gis import subdist_ulb_mapping, village_ward_mapping
 
 

@@ -148,6 +148,7 @@ def standardise_ka_linelist_v3(*,
         headers = sorted(headers, key=accepted_headers.index)
 
         df = df[headers]
+        df = df.dropna(subset = ["metadata.nameAddress","metadata.primaryDate","metadata.age","metadata.gender"], thresh=2)
         standardise_data_dict[districtID] = df
 
     return standardise_data_dict

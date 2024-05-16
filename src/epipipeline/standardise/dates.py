@@ -1,8 +1,14 @@
 import datetime
+import logging
 import re
 
 import pandas as pd
 
+# Set up logging
+logger = logging.getLogger("epipipeline.standardise.dengue.karnataka")
+
+# Capture warnings and redirect them to the logging system
+logging.captureWarnings(True)
 
 def fix_symptom_date(symptomDate: str, resultDate: str) -> datetime.datetime:
     """If symptom date is in number of days, extracts number and converts to date as result date - number
@@ -66,7 +72,7 @@ def fix_year_hist(Date: datetime.datetime, current_year: int) -> datetime.dateti
     """
 
     if pd.isna(Date):
-        return (pd.NA)
+        return pd.NA
 
     assert isinstance(Date, datetime.datetime) and isinstance(current_year, int), "Input date and int year"
 
@@ -169,3 +175,13 @@ def fix_two_dates(earlyDate: datetime.datetime, lateDate: datetime.datetime) -> 
             return (earlyDate, lateDate)  # returns original dates if conditions unmet
     else:
         return (earlyDate, lateDate)  # returns original dates if dates meet logical conditions
+
+
+def check_date_to_today(*, date, tagDate=None):
+
+    if tagDate is None:
+        tagDate = datetime.datetime.today()
+
+    if date > tagDate:
+        # logger.warning(f"Found a date greater than today in {districtName} ({districtID}). Removing...")
+        return pd.NaT

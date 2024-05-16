@@ -1,5 +1,7 @@
 from importlib.metadata import version
+
 import pandas as pd
+
 from epipipeline.logging_config import setup_logging
 
 __version__ = version(__name__)

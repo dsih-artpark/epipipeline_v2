@@ -15,7 +15,7 @@ from epipipeline.standardise import (
     standardise_test_result,
     validate_age,
 )
-from epipipeline.standardise.dates import fix_symptom_date, fix_two_dates, string_clean_dates  # , fix_year_hist
+from epipipeline.standardise.dates import check_date_to_today, fix_symptom_date, fix_two_dates, fix_year_hist, string_clean_dates
 from epipipeline.standardise.gis import subdist_ulb_mapping, village_ward_mapping
 
 # Set up logging
@@ -56,24 +56,28 @@ def standardise_ka_linelist_v3(*,
         ## OPD, IPD
         if "case.opdOrIpd" not in df.columns.to_list():
             logger.info(f"District {districtName} ({districtID}) does not have OPD-IPD info")
+            df["case.opdOrIpd"] = pd.NA
         else:
             df["case.opdOrIpd"]=df["case.opdOrIpd"].apply(lambda x: opd_ipd(x))
 
         ## PUBLIC, PRIVATE
         if "case.publicOrPrivate" not in df.columns.to_list():
             logger.info(f"District {districtName} ({districtID}) does not have Public-Private info")
+            df["case.publicOrPrivate"] = pd.NA
         else:
             df["case.publicOrPrivate"]=df["case.publicOrPrivate"].apply(lambda x: public_private(x))
 
         ## ACTIVE, PASSIVE
         if "case.surveillance" not in df.columns.to_list():
             logger.info(f"District {districtName} ({districtID}) does not have Active-Passive Surveillance info")
+            df["case.surveillance"] = pd.NA
         else:
             df["case.surveillance"]=df["case.surveillance"].apply(lambda x: active_passive(x))
 
         # URBAN, RURAL
         if "case.urbanOrRural" not in df.columns.to_list():
             logger.info(f"District {districtName} ({districtID}) does not have Urban vs Rural info")
+            df["case.urbanOrRural"] = pd.NA
         else:
             df["case.urbanOrRural"]=df["case.urbanOrRural"].apply(lambda x: rural_urban(x))
 
@@ -87,7 +91,8 @@ def standardise_ka_linelist_v3(*,
         # Then, string clean dates and fix year errors to current/previous (if dec)/next (if jan)
         for var in datevars:
             df[var]=df[var].apply(lambda x: string_clean_dates(x))
-            # df[var]=df[var].apply(lambda x: fix_year_hist(x,CURRENT_YEAR))
+            df[var]=df[var].apply(lambda x: check_date_to_today(date=x))
+            df[var]=df[var].apply(lambda x: fix_year_hist(x,CURRENT_YEAR))
 
         # Then, carry out year and date logical checks and fixes on symptom and sample date first
         result=df.apply(lambda x: fix_two_dates(x["event.symptomOnsetDate"], x["event.test.sampleCollectionDate"]), axis=1)

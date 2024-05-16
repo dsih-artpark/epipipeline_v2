@@ -12,10 +12,9 @@ from epipipeline.standardise import (
     standardise_age,
     standardise_gender,
     standardise_test_result,
-    string_clean_dates,
     validate_age,
 )
-from epipipeline.standardise.dates import fix_symptom_date, fix_two_dates, fix_year_hist
+from epipipeline.standardise.dates import fix_symptom_date, fix_two_dates, fix_year_hist, string_clean_dates
 from epipipeline.standardise.gis import subdist_ulb_mapping, village_ward_mapping
 
 
@@ -67,7 +66,7 @@ def standardise_ka_linelist_v3(*, preprocessed_data_dict, CURRENT_YEAR, THRESHOL
         # Then, string clean dates and fix year errors to current/previous (if dec)/next (if jan)
         for var in datevars:
             df[var]=df[var].apply(lambda x: string_clean_dates(x))
-            df[var]=df[var].apply(lambda x: fix_year_hist(x,CURRENT_YEAR))
+            # df[var]=df[var].apply(lambda x: fix_year_hist(x,CURRENT_YEAR))
 
         # Then, carry out year and date logical checks and fixes on symptom and sample date first
         result=df.apply(lambda x: fix_two_dates(x["event.symptomOnsetDate"], x["event.test.sampleCollectionDate"]), axis=1)

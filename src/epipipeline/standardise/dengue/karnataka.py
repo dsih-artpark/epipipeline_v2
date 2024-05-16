@@ -26,7 +26,7 @@ logging.captureWarnings(True)
 
 def standardise_ka_linelist_v3(*,
                                preprocessed_data_dict, CURRENT_YEAR, THRESHOLDS, STR_VARS,
-                               regionIDs_df, regionIDs_dict, tagDate=None):
+                               regionIDs_df, regionIDs_dict, accepted_headers, tagDate=None):
 
     standardise_data_dict = dict()
     for districtID in preprocessed_data_dict.keys():
@@ -139,6 +139,10 @@ def standardise_ka_linelist_v3(*,
         # Generate recordID after standardisation and de-duplication
         df["metadata.recordID"]=[uuid.uuid4() for i in range(len(df))]
 
+        headers = [head for head in df.columns.to_list() if head in accepted_headers]
+        headers = sorted(headers, key=accepted_headers.index)
+
+        df = df[headers]
         standardise_data_dict[districtID] = df
 
     return standardise_data_dict

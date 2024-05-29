@@ -1,423 +1,154 @@
+import logging
+import uuid
+
 import pandas as pd
-import numpy as np
-import datetime
-from epipipeline.standardise.demographics import standardise_age
-from epipipeline.standardise.demographics import standardise_gender
-from epipipeline.standardise.gisdata.karnataka import get_sd_vill_v1
-from epipipeline.standardise.dates import validate_dates
-from epipipeline.ud.download import download_file_from_URI
-from epipipeline.ud.upload import upload_files
-import boto3
-import tempfile
-import warnings
-from datetime import datetime as dt
-import re
-import requests
-import yaml
 
-pd.set_option('future.no_silent_downcasting', True)
+from epipipeline.standardise import (
+    active_passive,
+    clean_strings,
+    generate_test_count,
+    opd_ipd,
+    public_private,
+    rural_urban,
+    standardise_age,
+    standardise_gender,
+    standardise_test_result,
+    validate_age,
+)
+from epipipeline.standardise.dates import check_date_to_today, fix_symptom_date, fix_two_dates, fix_year_hist, string_clean_dates
+from epipipeline.standardise.gis import subdist_ulb_mapping, village_ward_mapping
 
+# Set up logging
+logger = logging.getLogger("epipipeline.standardise.dengue.karnataka")
 
-def id2code(id_):
-    return id_.split("_")[-1]
+# Capture warnings and redirect them to the logging system
+logging.captureWarnings(True)
 
+def standardise_ka_linelist_v3(*,
+                               preprocessed_data_dict, CURRENT_YEAR, THRESHOLDS, STR_VARS,
+                               regionIDs_df, regionIDs_dict, accepted_headers, tagDate=None):
 
-def id2code_dist(id_):
-    if id_.startswith("district"):
-        return id_.split("_")[-1]
-    else:
-        return 0
-
-
-def id2code_ulb(id_):
-    if id_.startswith("ulb"):
-        return id_.split("_")[-1]
-    else:
-        return 0
-
-
-def sanity(date):
-    try:
-        if date.date() <= datetime.date.today():
-            return date
-        else:
-            return pd.NaT
-    except TypeError:
-        return pd.NaT
-
-
-def clean_test_method(series, test_type):
-
-    def clean_string(string):
-        # Convert to lowercase
-        string = string.lower()
-
-        # Remove special characters except '+' and '-'
-        string = re.sub(r'[^a-zA-Z0-9+\-]+', '', string)
-        string = re.sub(r'\s+', ' ', string).strip()
-
-        return string
-
-    def contains_keywords(string):
-        if test_type == "ns1":
-            keywords = ["ns1", "positive", "+ve"]
-            if any(keyword in string for keyword in keywords) or string == "1":
-                return True
-            else:
-                return pd.NA
-        elif test_type == "igm":
-            keywords = ["igm", "mac elisa", "positive", "+ve"]
-            if any(keyword in string for keyword in keywords) or string == "1":
-                return True
-            else:
-                return pd.NA
-
-    cleaned_series = series.apply(clean_string)
-    contains_keywords_series = cleaned_series.apply(contains_keywords)
-
-    return contains_keywords_series
-
-
-# def standardise_retrospective_ka_linelist(year, regionIDs_dict, regionIDs_df, accepted_headers):
-#    pass
-
-
-def standardise_ka_linelist_v1(preprocessed_data_dict, regionIDs_dict,
-                               regionIDs_df, thresholds, year, accepted_headers, version="v2"):
-
-    standardised_data_dict = {}
+    standardise_data_dict = dict()
     for districtID in preprocessed_data_dict.keys():
 
+        districtName = regionIDs_dict[districtID]
         df = preprocessed_data_dict[districtID].copy()
+        df["demographics.age"]=df["demographics.age"].apply(lambda x: standardise_age(x))
 
-        # Demographics
-        df = df[df.notnull().sum(axis=1) >= 10].reset_index(drop=True)
-        df["demographics.age"] = df["demographics.age"].apply(standardise_age)
-        df['demographics.gender'] = df['demographics.gender'].apply(standardise_gender)
+        # Validate Age - 0 to 105
+        df["demographics.age"]=df["demographics.age"].apply(lambda x: validate_age(x))
 
-        location_sd_vill = df.apply(lambda row: get_sd_vill_v1(
-            row['location.district.ID'],
-            row['location.subdistrict.name'],
-            row['location.village.name'],
-            regionIDs_dict=regionIDs_dict,
-            regionIDs_df=regionIDs_df,
-            thresholds=thresholds),
-              axis=1
-              )
-        df = df.drop(columns=["location.subdistrict.name", "location.village.name"])
-        location_df = pd.DataFrame([item for item in location_sd_vill],
-                                   columns=["location.subdistrict.ID", "location.subdistrict.name",
-                                            "location.village.ID", "location.village.name"
-                                            ]
-                                   )
-        df = pd.concat([df, location_df], axis=1)
-        df["location.district.name"] = regionIDs_dict[districtID]["regionName"]
+        # Bin Age
+        df["demographics.ageRange"]=pd.cut(df["demographics.age"].replace(pd.NA,-999), bins=[0, 1, 6, 12, 18, 25, 45, 65, 105], include_lowest=False) # noqa: E501
+        df.loc[df["demographics.age"].isna(), "demographics.ageRange"]=pd.NA
 
-        date_columns = ["event.symptomOnsetDate", "event.test.sampleCollectionDate", "event.test.resultDate"]
+        # Standardise Gender - MALE, FEMALE, UNKNOWN
+        df["demographics.gender"]=df["demographics.gender"].apply(lambda x: standardise_gender(x))
 
-        df = validate_dates(df=df, year_of_data=year, date_columns=date_columns)
+        ### Standardise Result variables - POSITIVE, NEGATIVE, UNKNOWN
+        df["event.test.test1.result"]=df["event.test.test1.result"].apply(lambda x: standardise_test_result(x))
+        df["event.test.test2.result"]=df["event.test.test2.result"].apply(lambda x: standardise_test_result(x))
 
-        df["event.test.test1.result"] = clean_test_method(df["event.test.test1.result"].astype(str), test_type="ns1")
-        if "event.test.test2.result" in df.columns:
-            df["event.test.test2.result"] = clean_test_method(df["event.test.test2.result"].astype(str), test_type="igm")
+        ## Generate test count - [0,1,2]
+        df["event.test.numberOfTests"]=df.apply(lambda x: generate_test_count(x["event.test.test1.result"], x["event.test.test2.result"]), axis=1) # noqa: E501
 
-        standardised_data_dict[districtID] = df
+        # Standardise case variables
+        ## OPD, IPD
+        if "case.opdOrIpd" not in df.columns.to_list():
+            logger.info(f"District {districtName} ({districtID}) does not have OPD-IPD info")
+            df["case.opdOrIpd"] = pd.NA
+        else:
+            df["case.opdOrIpd"]=df["case.opdOrIpd"].apply(lambda x: opd_ipd(x))
 
-    all_columns = set()
-    for _, value in standardised_data_dict.items():
-        all_columns = all_columns.union(set(value.columns.to_list()))
+        ## PUBLIC, PRIVATE
+        if "case.publicOrPrivate" not in df.columns.to_list():
+            logger.info(f"District {districtName} ({districtID}) does not have Public-Private info")
+            df["case.publicOrPrivate"] = pd.NA
+        else:
+            df["case.publicOrPrivate"]=df["case.publicOrPrivate"].apply(lambda x: public_private(x))
 
-    missing_cols = set()
-    for _, value in standardised_data_dict.items():
-        missing_cols = missing_cols.union(all_columns.difference(set(value.columns.to_list())))
+        ## ACTIVE, PASSIVE
+        if "case.surveillance" not in df.columns.to_list():
+            logger.info(f"District {districtName} ({districtID}) does not have Active-Passive Surveillance info")
+            df["case.surveillance"] = pd.NA
+        else:
+            df["case.surveillance"]=df["case.surveillance"].apply(lambda x: active_passive(x))
 
-    missing_cols = list(missing_cols)
+        # URBAN, RURAL
+        if "case.urbanOrRural" not in df.columns.to_list():
+            logger.info(f"District {districtName} ({districtID}) does not have Urban vs Rural info")
+            df["case.urbanOrRural"] = pd.NA
+        else:
+            df["case.urbanOrRural"]=df["case.urbanOrRural"].apply(lambda x: rural_urban(x))
 
-    df = pd.concat(standardised_data_dict.values(), ignore_index=True)
-    # df = df.drop(columns=missing_cols, errors='ignore')
+        # Fix date variables
+        datevars=["event.symptomOnsetDate", "event.test.sampleCollectionDate","event.test.resultDate"]
 
-    if version == "v2":
-        df["metadata.primaryDate"] = df["event.symptomOnsetDate"].fillna(df["event.test.sampleCollectionDate"]).fillna(df["event.test.resultDate"])  # noqa: E501
+        # Fix symptom date where number of days is entered instead of date
+        new_dates=df.apply(lambda x: fix_symptom_date(x["event.symptomOnsetDate"], x["event.test.resultDate"]), axis=1)
+        df["event.symptomOnsetDate"], df["event.test.resultDate"] = zip(*new_dates)
+
+        # Then, string clean dates and fix year errors to current/previous (if dec)/next (if jan)
+        for var in datevars:
+            df[var]=df[var].apply(lambda x: string_clean_dates(x))
+            df[var]=df[var].apply(lambda x: check_date_to_today(date=x))
+            df[var]=df[var].apply(lambda x: fix_year_hist(x,CURRENT_YEAR))
+
+        # Then, carry out year and date logical checks and fixes on symptom and sample date first
+        result=df.apply(lambda x: fix_two_dates(x["event.symptomOnsetDate"], x["event.test.sampleCollectionDate"]), axis=1)
+        df["event.symptomOnsetDate"], df["event.test.sampleCollectionDate"] = zip(*result)
+
+        # Then, carry out year and date logical checks and fixes on symptom and sample date first
+        result=df.apply(lambda x: fix_two_dates(x["event.test.sampleCollectionDate"], x["event.test.resultDate"]), axis=1)
+        df["event.test.sampleCollectionDate"], df["event.test.resultDate"] = zip(*result)
+
+        # One last time on symptom and sample date..for convergence..miracles do happen!
+        result=df.apply(lambda x: fix_two_dates(x["event.symptomOnsetDate"], x["event.test.sampleCollectionDate"]), axis=1)
+        df["event.symptomOnsetDate"], df["event.test.sampleCollectionDate"] = zip(*result)
+
+        # format dates to ISO format
+        for var in datevars:
+            df[var]=pd.to_datetime(df[var]).dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+        # Setting primary date - symptom date > sample date > result date
+        df["metadata.primaryDate"]=df["event.symptomOnsetDate"].fillna(df["event.test.sampleCollectionDate"]).fillna(df["event.test.resultDate"])
+
+        # Clean string vars
+        for var in STR_VARS:
+            if var in df.columns:
+                df[var]=df[var].apply(lambda x: clean_strings(x))
+
+        # Geo-mapping
+        ## Note: can be optimised to improve geo-mapping
+        # Move BBMP from district to subdistrict/ulb field
+        # df.loc[df["location.admin2.name"]=="BBMP", "location.admin3.name"]="BBMP"
+
+        assert len(df[df["location.admin2.ID"]=="admin_0"])==0, "District(s) missing"
+
+        # Map subdistrict/ulb name to standardised LGD name and code
+        subdist=df.apply(lambda x: subdist_ulb_mapping(x["location.admin2.ID"], x["location.admin3.name"], regionIDs_df,
+        THRESHOLDS["subdistrict"]), axis=1)
+        df["location.admin3.name"], df["location.admin3.ID"]=zip(*subdist)
+
+        # Map village/ward name to standardised LGD name and code
+        villages=df.apply(lambda x: village_ward_mapping(x["location.admin3.ID"], x["location.admin5.name"],
+                            regionIDs_df, THRESHOLDS["village"] ), axis=1)
+        df["location.admin5.name"], df["location.admin5.ID"]=zip(*villages)
+
+        # Extract admin hierarchy from admin3.ID - ULB, REVENUE, admin_0 (if missing ulb/subdistrict LGD code)
+        df["location.admin.hierarchy"]=df["location.admin3.ID"].apply(lambda x: "ULB" if x.startswith("ulb") else ("REVENUE" if x.startswith("subdistrict") else "admin_0"))  # noqa: E501
+
+        # Drop duplicates across all vars after standardisation
+        df.drop_duplicates(inplace=True)
+
+        # Generate recordID after standardisation and de-duplication
+        df["metadata.recordID"]=[uuid.uuid4() for i in range(len(df))]
 
         headers = [head for head in df.columns.to_list() if head in accepted_headers]
         headers = sorted(headers, key=accepted_headers.index)
+
         df = df[headers]
+        df = df.dropna(subset = ["metadata.nameAddress","metadata.primaryDate","demographics.age","demographics.gender"], thresh=2)
+        standardise_data_dict[districtID] = df
 
-    elif version == "v1":
-
-        message = "The v1 format for Linelists is deprecated, and will not be supported in future releases."  # noqa
-        warnings.warn(message, DeprecationWarning, stacklevel=3)
-
-        column_order = ['type', 'dashboard_date', 'state_code', 'district_code', 'subdistrict_code', 'ulb_code', 'village_code',
-                        'zone_name', 'ward_number', 'phc', 'subcenter', 'lat', 'lng', 'age', 'gender', 'test_method',
-                        'case_type', 'district_name', 'subdistrict_name', 'village_name', 'year']
-
-        df["type"] = "individual"
-        df["dashboard_date"] = df["event.symptomOnsetDate"].fillna(df["event.test.sampleCollectionDate"]).fillna(df["event.test.resultDate"])  # noqa: E501
-        df["dashboard_date"] = pd.to_datetime(df["dashboard_date"], errors='coerce')
-        df["dashboard_date"] = df["dashboard_date"].apply(sanity)
-
-        df["district_code"] = df["location.district.ID"].apply(id2code)
-        df["subdistrict_code"] = df["location.subdistrict.ID"].apply(id2code)
-        df["village_code"] = df["location.village.ID"].apply(id2code)
-
-        df["district_name"] = df["location.district.name"]
-        df["subdistrict_name"] = df["location.subdistrict.name"]
-        df["village_name"] = df["location.village.name"]
-
-        df['state_code'] = 29
-
-        empty_cols = ['zone_name', 'ward_number',
-                      'phc', 'subcenter',
-                      'lat', 'lng', 'year', 'test_method', 'ulb_code']
-        for empty_col in empty_cols:
-
-            df[empty_col] = None
-
-        df["age"] = df["demographics.age"]
-        df["gender"] = df["demographics.gender"]
-        df["case_type"] = "confirmed"
-
-        df = df[column_order]
-
-    else:
-        raise ValueError(f"Version {version} is invalid or not supported.")
-
-    return df
-
-
-# Function converts v2 summaries to v1
-
-def get_ka_daily_summary_v1(summary):
-
-    message = "The v1 format for Daily Summaries is deprecated, and will not be supported in future releases."  # noqa
-    warnings.warn(message, DeprecationWarning, stacklevel=3)
-
-    # Convert to v1
-    summary["type"] = "summary"
-    summary["state_code"] = 29
-    summary["district_code"] = summary["location.regionID"].apply(id2code_dist)
-    summary["ulb_code"] = summary["location.regionID"].apply(id2code_ulb)
-
-    summary = summary.rename({"record.date": "dashboard_date",
-                              "daily.suspected": "suspected",
-                              "daily.tested": "tested",
-                              "daily.deaths": "mortality"
-                              }, axis="columns")
-
-    drop_cols = ["location.regionID", "location.regionName",
-                 "daily.igm_positives", "daily.ns1_positives", "daily.total_positives",
-                 "cumulative.suspected", "cumulative.tested",
-                 "cumulative.igm_positives", "cumulative.ns1_positives",
-                 "cumulative.total_positives", "cumulative.deaths"]
-    summary = summary.drop(columns=drop_cols)
-    add_keys = ['subdistrict_code', 'village_code', 'zone_name',
-                'ward_number', 'phc', 'subcenter', 'lat', 'lng',
-                'age', 'gender', 'test_method', 'case_type', 'district_name',
-                'subdistrict_name', 'village_name', 'year']
-
-    for key in add_keys:
-        summary[key] = np.nan
-
-    column_order = ['type', 'dashboard_date',
-                    'state_code', 'district_code', 'subdistrict_code', 'ulb_code', 'village_code',
-                    'zone_name', 'ward_number', 'phc', 'subcenter', 'lat', 'lng', 'age', 'gender',
-                    'test_method', 'case_type', 'suspected', 'tested', 'mortality',
-                    'district_name', 'subdistrict_name', 'village_name', 'year']
-
-    summary = summary[column_order]
-
-    return summary
-
-
-def get_ka_daily_summary_v2(raw_URI, preprocess_metadata,
-                            regionIDs_df, regionIDs_dict,
-                            datadict_github_raw_url, dataset_info=None,
-                            source_file="oneday", require_all_headers=True,
-                            verbose=False):
-
-    error = []
-    if source_file != "oneday":
-        e = "Only Single Day Files Supported"
-        print(e)
-        return None, [e]
-
-    file = download_file_from_URI(raw_URI, extension="xlsx")
-
-    date = dt.strptime(raw_URI.split("/")[-1].replace(".xlsx", ""), "%Y-%m-%d")
-
-    header_row_indices = preprocess_metadata['indices']['header_row_indices']
-    row_indices = eval(preprocess_metadata['indices']['row_indices'])
-    col_indices = eval(preprocess_metadata['indices']['col_indices'])
-
-    excel = pd.read_excel(file.name, header=None)
-
-    given_headers = None
-    for header_row_index in header_row_indices:
-        if given_headers is None:
-            given_headers = excel.iloc[:, col_indices].loc[header_row_index].fillna("")
-        else:
-            given_headers += excel.iloc[:, col_indices].loc[header_row_index].fillna("")
-
-    given_headers = list(given_headers)
-    summary_v2 = excel.iloc[row_indices, col_indices].reset_index(drop=True)
-
-    reference_headers = preprocess_metadata["reference_headers"]
-    preprocessed_headers = preprocess_metadata['preprocessed_headers']
-
-    for i in range(len(given_headers)):
-        head = str(given_headers[i]).lower()
-        head = re.sub(' +', ' ', head)
-        head = head.strip()
-
-        if head != reference_headers[i]:
-            e = reference_headers[i] + " not found for " + date.strftime("%Y-%m-%d") + ". Assuming hardcoded order regardless."
-            if verbose:
-                print(e)
-            error += [e]
-
-    summary_v2.columns = preprocessed_headers
-
-    bbmp_posn = re.sub('[^A-Za-z0-9 ]+', '', str(summary_v2["s.no"].loc[31])).strip()
-
-    if bbmp_posn == "Bangaluru City BBMP":
-        summary_v2.loc[31, "regionName"] = "BBMP"
-
-    summary_v2 = summary_v2.drop("s.no", axis="columns")
-    district_mapping = preprocess_metadata['district_mapping']
-
-    mapping_df = pd.DataFrame(district_mapping.items(), columns=["regionID", "regionName"])
-
-    summary_v2 = pd.merge(summary_v2, mapping_df, on="regionName", indicator="_success", how="outer")
-    success = summary_v2[["regionID", "regionName", "_success"]]
-    summary_v2 = summary_v2.drop("_success", axis="columns")
-
-    failure = success[success._success != "both"].reset_index(drop=True)
-
-    if len(failure) > 0:
-        for index, row in failure.iterrows():
-            if row['_success'] == "left_only":
-                e = date.strftime("%Y-%m-%d") + ": District " + str(row["regionName"]) + " not found in reference."
-                error += [e]
-                if verbose:
-                    print(e)
-            elif row['_success'] == "right_only":
-                districtID = row["regionID"]
-                district_name = regionIDs_dict[districtID]["regionName"]
-                e = "District " + district_name + " (" + districtID + ") not found in file for " + date.strftime("%Y-%m-%d") + "."
-                error += [e]
-
-                if verbose:
-                    print(e)
-
-    summary_v2 = pd.merge(summary_v2.drop("regionName", axis="columns"), regionIDs_df[["regionID", "regionName"]],
-                          on="regionID", how="inner")
-    summary_v2["record.date"] = date
-    summary_v2 = summary_v2.rename(columns={"regionName": "location.regionName",
-                                            "regionID": "location.regionID"
-                                            }
-                                   )
-    datadict_response = requests.get(datadict_github_raw_url, allow_redirects=True)
-    datadict = datadict_response.content.decode("utf-8")
-    datadict = yaml.safe_load(datadict)
-
-    accepted_headers = list(datadict["fields"].keys())
-
-    if require_all_headers:
-        accepted_headers_set = set(accepted_headers)
-        headers_set = set(summary_v2.columns.to_list())
-
-        diff1 = accepted_headers_set.difference(headers_set)
-        diff2 = headers_set.difference(accepted_headers_set)
-        if len(diff1) > 0:
-            e = "Mismatch: " + str(list(diff1)) + " columns not found in file headers"
-            error += [e]
-            if verbose:
-                print(e)
-        if len(diff2) > 0:
-            e = "Mismatch: " + str(list(diff2)) + " columns not found in file headers"
-            error += [e]
-            if verbose:
-                print(e)
-
-        summary_v2 = summary_v2[accepted_headers]
-
-    summary_v2 = summary_v2.fillna(0)
-
-    return summary_v2, error
-
-
-def update_summaries_by_day_on_S3(raw_URI_Prefix, std_URI_Prefix, year, metadata,
-                                  regionIDs_df, regionIDs_dict,
-                                  version="v2", START_DATE=dt.strptime("2023-07-01", "%Y-%m-%d"),
-                                  verbose=False
-                                  ):
-
-    s3 = boto3.client('s3')
-
-    dse_all = []
-
-    # Get all objects available in source bucket
-
-    raw_Bucket = raw_URI_Prefix.removeprefix("s3://").split("/")[0]
-    raw_Prefix = raw_URI_Prefix.removeprefix("s3://").removeprefix(raw_Bucket + "/")
-
-    raw_objects = s3.list_objects_v2(Bucket=raw_Bucket, Prefix=raw_Prefix + str(year) + "-")
-    # raw_keys = [obj["Key"] for obj in raw_objects.get("Contents", []) if obj["Size"] > 0]
-    raw_dates = [obj["Key"].split("/")[-1].removesuffix(".xlsx")
-                 for obj in raw_objects.get("Contents", []) if obj["Size"] > 0]
-
-    # Get all objects in the destination bucket
-
-    std_Bucket = std_URI_Prefix.removeprefix("s3://").split("/")[0]
-    std_Prefix = std_URI_Prefix.removeprefix("s3://").removeprefix(std_Bucket + "/")
-
-    std_objects = s3.list_objects_v2(Bucket=std_Bucket, Prefix=std_Prefix + str(year) + "-")
-    # std_keys = [obj["Key"] for obj in std_objects.get("Contents", []) if obj["Size"] > 0]
-    std_dates = [obj["Key"].split("/")[-1].removesuffix(".csv")
-                 for obj in std_objects.get("Contents", []) if obj["Size"] > 0]
-
-    to_standardise = list(set(raw_dates).difference(set(std_dates)))
-
-    tmpdir = tempfile.TemporaryDirectory()
-
-    if len(to_standardise) == 0:
-        e = "No fresh daily summaries available"
-        dse_all += [e]
-        if verbose:
-            print(e)
-
-    for date in to_standardise:
-        if dt.strptime(date, "%Y-%m-%d") >= START_DATE:
-
-            raw_URI = raw_URI_Prefix + date + ".xlsx"
-
-            summary, dse = get_ka_daily_summary_v2(raw_URI=raw_URI,
-                                                   preprocess_metadata=metadata['preprocess'],
-                                                   regionIDs_df=regionIDs_df,
-                                                   regionIDs_dict=regionIDs_dict,
-                                                   datadict_github_raw_url=metadata['datadictionary_github_raw_url'],
-                                                   verbose=verbose
-                                                   )
-            if version == "v1":
-                summary = get_ka_daily_summary_v1(summary)
-
-            std_fname = tmpdir.name + "/" + date + ".csv"
-            summary.to_csv(path_or_buf=std_fname, index=False)
-
-            std_Key = std_Prefix + date + ".csv"
-            upload_files(Bucket=std_Bucket, Key=std_Key, Filename=std_fname)
-
-            e = "Daily Summary " + str(version) + " Upload Successful for " + str(date)
-            dse += [e]
-            if verbose:
-                print(e)
-
-            if len(dse) > 0:
-                dse_all += dse
-
-    return dse_all
-
-
-if __name__ == "__main__":
-    pass
+    return standardise_data_dict

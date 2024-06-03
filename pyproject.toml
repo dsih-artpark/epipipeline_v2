@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "epipipeline"
-version = "3.0.0"
+version = "3.0.1"
 description = ""
 authors = ["Sai Sneha <sneha@artpark.in>"]
 readme = "README.md"

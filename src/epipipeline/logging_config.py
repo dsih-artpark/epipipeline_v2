@@ -2,6 +2,7 @@
 import logging
 import logging.config
 
+
 def setup_logging(default_level='WARNING'):
     """
     Set up logging configuration.

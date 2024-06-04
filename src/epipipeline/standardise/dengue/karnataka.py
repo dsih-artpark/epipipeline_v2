@@ -93,7 +93,11 @@ def standardise_ka_linelist_v1(preprocessed_data_dict, regionIDs_dict,
 
         # Demographics
         df = df[df.notnull().sum(axis=1) >= 10].reset_index(drop=True)
-        df["demographics.age"] = df["demographics.age"].apply(standardise_age)
+        if "demographics.age" in df.columns():
+            df["demographics.age"] = df["demographics.age"].apply(standardise_age)
+        else:
+            df["demographics.age"] = pd.NA
+            print(f"Age empty for district {districtID}. Filled with NA.")
         df['demographics.gender'] = df['demographics.gender'].apply(standardise_gender)
 
         location_sd_vill = df.apply(lambda row: get_sd_vill_v1(

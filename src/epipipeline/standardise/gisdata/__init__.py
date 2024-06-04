@@ -129,7 +129,9 @@ def fuzzy_matching(string, choices, threshold):
     # what does process.extractOne do?
     best_match = process.extractOne(str(string), choices)
 
-    if best_match[1] > threshold:
+    if best_match is None:
+        return None
+    elif best_match[1] > threshold:
         return best_match[0]
     else:
         return None

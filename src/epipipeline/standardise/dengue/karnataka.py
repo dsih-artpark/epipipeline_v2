@@ -93,7 +93,7 @@ def standardise_ka_linelist_v1(preprocessed_data_dict, regionIDs_dict,
 
         # Demographics
         df = df[df.notnull().sum(axis=1) >= 10].reset_index(drop=True)
-        if "demographics.age" in df.columns():
+        if "demographics.age" in df.columns:
             df["demographics.age"] = df["demographics.age"].apply(standardise_age)
         else:
             df["demographics.age"] = pd.NA

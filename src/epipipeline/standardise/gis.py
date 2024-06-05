@@ -4,14 +4,14 @@ import pandas as pd
 from fuzzywuzzy import process
 
 
-def dist_mapping(*, stateID: str, districtName: str, regions_df: pd.DataFrame, threshold: int) -> tuple:
+def dist_mapping(*, stateID: str, districtName: str, regions_df: pd.DataFrame, threshold: int = 65) -> tuple:
     """Standardises district names and codes (based on LGD), provided the standardised state ID
 
     Args:
         stateID (str): standarised state ID
         districtName (str): raw district name
         regions_df (pd.DataFrame): regions.csv as a dataframe
-        threshold (int): cut-off for fuzzy matching
+        threshold (int): cut-off for fuzzy matching, default set to 65
 
     Returns:
         tuple: (LGD district name, LGD district code or admin_0 if not matched)
@@ -40,14 +40,14 @@ def dist_mapping(*, stateID: str, districtName: str, regions_df: pd.DataFrame, t
     return (districtName, districtCode)  # returns original name if unmatched
 
 
-def subdist_ulb_mapping(districtID: str, subdistName: str, df: pd.DataFrame, threshold: int) -> tuple:
+def subdist_ulb_mapping(districtID: str, subdistName: str, df: pd.DataFrame, threshold: int = 65) -> tuple:
     """Standardises subdistrict/ulb names and codes (based on LGD), provided the standardised district ID
 
     Args:
         districtID (str): standarised district ID
         subdistName (str): raw subdistrict/ulb name
         df (pd.DataFrame): regions.csv as a dataframe
-        threshold (int): cut-off for fuzzy matching
+        threshold (int): cut-off for fuzzy matching, default set to 65
 
     Returns:
         tuple: (LGD subdistrict/ulb name, LGD subdistrict/ulb code or admin_0 if not matched)
@@ -73,14 +73,14 @@ def subdist_ulb_mapping(districtID: str, subdistName: str, df: pd.DataFrame, thr
         return (subdistName, "admin_0")  # returns original name if unmatched
 
 
-def village_ward_mapping(subdistID: str, villageName: str, df: pd.DataFrame, threshold: int) -> tuple:
+def village_ward_mapping(subdistID: str, villageName: str, df: pd.DataFrame, threshold: int = 95) -> tuple:
     """Standardises village names and codes (based on LGD), provided the standardised district ID
 
     Args:
         subdistID (str): standarised subdistrict/ulb ID
         villageName (str): raw village/ward name
         df (pd.DataFrame): regions.csv as a dataframe
-        threshold (int): cut-off for fuzzy matching
+        threshold (int): cut-off for fuzzy matching, default set to 95
 
     Returns:
         tuple: (LGD village/ward name, LGD village/ward code or admin_0 if not matched)

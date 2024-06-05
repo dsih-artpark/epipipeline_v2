@@ -4,7 +4,43 @@ import pandas as pd
 from fuzzywuzzy import process
 
 
-def subdist_ulb_mapping(districtID:str, subdistName:str, df:pd.DataFrame, threshold:int) -> tuple:
+def dist_mapping(*, stateID: str, districtName: str, regions_df: pd.DataFrame, threshold: int) -> tuple:
+    """Standardises district names and codes (based on LGD), provided the standardised state ID
+
+    Args:
+        stateID (str): standarised state ID
+        districtName (str): raw district name
+        regions_df (pd.DataFrame): regions.csv as a dataframe
+        threshold (int): cut-off for fuzzy matching
+
+    Returns:
+        tuple: (LGD district name, LGD district code or admin_0 if not matched)
+    """
+
+    if pd.isna(districtName):
+        return (pd.NA, "admin_0")
+
+    districtName = districtName.upper().strip()
+    districtName = re.sub(r"GULBARGA", "KALABURAGI", districtName)
+    districtName = re.sub(r"\(?\sU\)?$", " URBAN", districtName)
+    districtName = re.sub(r"\(?\sR\)?$", " RURAL", districtName)
+    districtName = re.sub(r"BIJAPUR", "VIJAYAPURA", districtName)
+    districtName = re.sub(
+        r"B[AE]NGAL[OU]R[UE]\s?C?I?T?Y?|BBMP", "BENGALURU URBAN", districtName)
+
+    districts = regions_df[regions_df["parentID"]
+                           == stateID]["regionName"].to_list()
+    match = process.extractOne(districtName, districts, score_cutoff=threshold)
+    if match:
+        districtName = match[0]
+        districtCode = regions_df[(regions_df["parentID"] == stateID) & (
+            regions_df["regionName"] == districtName)]["regionID"].values[0]
+    else:
+        districtCode = "admin_0"
+    return (districtName, districtCode)  # returns original name if unmatched
+
+
+def subdist_ulb_mapping(districtID: str, subdistName: str, df: pd.DataFrame, threshold: int) -> tuple:
     """Standardises subdistrict/ulb names and codes (based on LGD), provided the standardised district ID
 
     Args:
@@ -20,19 +56,24 @@ def subdist_ulb_mapping(districtID:str, subdistName:str, df:pd.DataFrame, thresh
     if pd.isna(subdistName):
         return (pd.NA, "admin_0")
 
-    subdistName=subdistName.upper().strip()
-    subdistName=re.sub(r'\(?\sU\)?$'," URBAN", subdistName, flags=re.IGNORECASE)
-    subdistName=re.sub(r'\(?\sR\)?$'," RURAL", subdistName, flags= re.IGNORECASE)
-    subdistricts=df[df["parentID"]==districtID]["regionName"].to_list()
-    match=process.extractOne(subdistName, subdistricts, score_cutoff=threshold)
+    subdistName = subdistName.upper().strip()
+    subdistName = re.sub(r'\(?\sU\)?$', " URBAN",
+                         subdistName, flags=re.IGNORECASE)
+    subdistName = re.sub(r'\(?\sR\)?$', " RURAL",
+                         subdistName, flags=re.IGNORECASE)
+    subdistricts = df[df["parentID"] == districtID]["regionName"].to_list()
+    match = process.extractOne(
+        subdistName, subdistricts, score_cutoff=threshold)
     if match:
-        subdistName=match[0]
-        subdistCode=df[(df["parentID"]==districtID) & (df["regionName"]==subdistName)]["regionID"].values[0]
+        subdistName = match[0]
+        subdistCode = df[(df["parentID"] == districtID) & (
+            df["regionName"] == subdistName)]["regionID"].values[0]
         return (subdistName, subdistCode)
     else:
-        return (subdistName, "admin_0") # returns original name if unmatched
+        return (subdistName, "admin_0")  # returns original name if unmatched
 
-def village_ward_mapping(subdistID:str, villageName:str, df:pd.DataFrame, threshold:int)-> tuple:
+
+def village_ward_mapping(subdistID: str, villageName: str, df: pd.DataFrame, threshold: int) -> tuple:
     """Standardises village names and codes (based on LGD), provided the standardised district ID
 
     Args:
@@ -47,12 +88,13 @@ def village_ward_mapping(subdistID:str, villageName:str, df:pd.DataFrame, thresh
     if pd.isna(villageName):
         return (pd.NA, "admin_0")
 
-    villageName=villageName.upper().strip()
-    villages=df[df["parentID"]==subdistID]["regionName"].to_list()
-    match=process.extractOne(villageName, villages, score_cutoff=threshold)
+    villageName = villageName.upper().strip()
+    villages = df[df["parentID"] == subdistID]["regionName"].to_list()
+    match = process.extractOne(villageName, villages, score_cutoff=threshold)
     if match:
-        villageName=match[0]
-        villageCode=df[(df["parentID"]==subdistID) & (df["regionName"]==villageName)]["regionID"].values[0]
+        villageName = match[0]
+        villageCode = df[(df["parentID"] == subdistID) & (
+            df["regionName"] == villageName)]["regionID"].values[0]
         return (villageName, villageCode)
     else:
-        return (villageName, "admin_0") #returns original name if unmatched
+        return (villageName, "admin_0")  # returns original name if unmatched

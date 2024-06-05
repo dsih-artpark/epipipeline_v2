@@ -4,13 +4,13 @@ import pandas as pd
 from fuzzywuzzy import process
 
 
-def dist_mapping(*, stateID: str, districtName: str, regions_df: pd.DataFrame, threshold: int = 65) -> tuple:
+def dist_mapping(*, stateID: str, districtName: str, df: pd.DataFrame, threshold: int = 65) -> tuple:
     """Standardises district names and codes (based on LGD), provided the standardised state ID
 
     Args:
         stateID (str): standarised state ID
         districtName (str): raw district name
-        regions_df (pd.DataFrame): regions.csv as a dataframe
+        df (pd.DataFrame): regions.csv as a dataframe
         threshold (int): cut-off for fuzzy matching, default set to 65
 
     Returns:
@@ -28,13 +28,11 @@ def dist_mapping(*, stateID: str, districtName: str, regions_df: pd.DataFrame, t
     districtName = re.sub(
         r"B[AE]NGAL[OU]R[UE]\s?C?I?T?Y?|BBMP", "BENGALURU URBAN", districtName)
 
-    districts = regions_df[regions_df["parentID"]
-                           == stateID]["regionName"].to_list()
+    districts = df[df["parentID"] == stateID]["regionName"].to_list()
     match = process.extractOne(districtName, districts, score_cutoff=threshold)
     if match:
         districtName = match[0]
-        districtCode = regions_df[(regions_df["parentID"] == stateID) & (
-            regions_df["regionName"] == districtName)]["regionID"].values[0]
+        districtCode = df[(df["parentID"] == stateID) & (df["regionName"] == districtName)]["regionID"].values[0]
     else:
         districtCode = "admin_0"
     return (districtName, districtCode)  # returns original name if unmatched

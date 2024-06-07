@@ -1,7 +1,7 @@
 import re
 
 
-def clean_colname(colname: str) -> str:
+def clean_colname(*, colname: str) -> str:
     """string clean column names
 
     Args:
@@ -19,7 +19,7 @@ def clean_colname(colname: str) -> str:
     return colname
 
 
-def map_columns(columnlist: list, map_dict: dict) -> str:
+def map_columns(*, columnlist: list, map_dict: dict) -> str:
     """Maps column names to standard column names using mapper provided
 
     Args:

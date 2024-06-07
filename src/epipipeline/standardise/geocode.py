@@ -20,7 +20,7 @@ import gmaps
 
 # Geocoding function
 
-def geocode(full_address: str, API_key: str) -> tuple:
+def geocode(*, full_address: str, API_key: str) -> tuple:
     """_summary_
 
     Args:

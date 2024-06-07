@@ -7,6 +7,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 from dataio.download import download_dataset_v2
+from epipipeline.preprocess.set_columns import (clean_colname, map_columns)
 
 # Set up logging
 logger = logging.getLogger("epipipeline.preprocess.dengue.karnataka")
@@ -206,42 +207,22 @@ def preprocess_ka_linelist_v2(*,
             df = df.iloc[2:].reset_index(drop=True)
 
         # Clean all headers, remove special characters
-        for i in range(len(headers)):
-
-            head = str(headers[i]).lower()
-
-            # Removing special characters
-            head = head.replace("\n", " ")
-            head = head.replace("/", " ")
-
-            # Remove extraneous spaces
-            head = re.sub(' +', ' ', head)
-            head = head.strip()
-
-            headers[i] = head
+        headers=[clean_colname(colname=col) for col in df.columns]
 
         # Set cleaned headers to the dataframe
         df.columns = headers
         logger.debug(f"Cleaned headers for district {districtID}: {headers}")
 
         # Correct any header errors specific to the districtID
+        
         if districtID in district_specific_errors.keys():
-
-            header_mapper = {}
-            for standard_name, name_options in district_specific_errors[districtID].items():
-                for option in name_options:
-                    header_mapper[option] = standard_name
-
+            header_mapper=map_columns(columnlist=df.columns, map_dict=district_specific_errors[districtID])
             # Rename columns based on the mapping
             df = df.rename(columns=header_mapper)
             logger.debug(f"Renamed columns for district {districtID} based on specific errors: {header_mapper}")
 
         # Rename all recognised columns to standard names
-        header_mapper = {}
-        for standard_name, name_options in standard_mapper.items():
-            for option in name_options:
-                header_mapper[option] = standard_name
-
+        header_mapper=map_columns(columnlist=df.columns, map_dict=standard_mapper)
         df = df.rename(columns=header_mapper)
         logger.debug(f"Renamed columns for district {districtID} to standard names: {header_mapper}")
 

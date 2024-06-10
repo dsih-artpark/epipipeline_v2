@@ -3,6 +3,12 @@ import pandas as pd
 from googlemaps import Client as GoogleMaps
 import googlemaps
 import gmaps
+import logging
+
+logger = logging.getLogger("standardise.geocode")
+
+# Capture warnings and redirect them to the logging system
+logging.captureWarnings(True)
 
 # # Run this if you have encrypted the API key locally
 # import subprocess
@@ -30,7 +36,7 @@ def geocode(*, full_address: str, API_key: str) -> tuple:
         tuple: lat, long
     """
     if pd.isna(full_address):
-        return pd.NA
+        return (pd.NA, pd.NA)
     else:
         assert isinstance(full_address, str) and isinstance(
             API_key, str) and len(API_key) == 39, "invalid input"
@@ -40,9 +46,7 @@ def geocode(*, full_address: str, API_key: str) -> tuple:
             if geocode_result:
                 lat = geocode_result[0]['geometry']['location']['lat']
                 long = geocode_result[0]['geometry']['location']['lng']
-                return lat, long
+                return (lat, long)
             else:
-                raise Exception("No result returned.")
-        except Exception as e:
-            print(f"Geocoding failed {e}")
-            return None, None
+                logger.info(f"No result returned")
+                return (pd.NA,pd.NA)

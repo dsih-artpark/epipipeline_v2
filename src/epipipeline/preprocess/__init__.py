@@ -20,7 +20,7 @@ def clean_colname(*, colname: str) -> str:
     return colname
 
 
-def map_column(*, columnname: str, map_dict: dict) -> str:
+def map_column(*, colname: str, map_dict: dict) -> str:
     """Maps column name to standard column name using mapper provided
 
     Args:
@@ -30,7 +30,7 @@ def map_column(*, columnname: str, map_dict: dict) -> str:
     Returns:
         str: Standardised column name
     """
-    assert isinstance(columnname, str) and isinstance(
+    assert isinstance(colname, str) and isinstance(
         map_dict, dict), "Invalid input type for column name or dictionary"
 
     for standard_name, name_options in map_dict.items():

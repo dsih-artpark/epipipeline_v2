@@ -36,7 +36,7 @@ def map_column(*, colname: str, map_dict: dict) -> str:
     for standard_name, name_options in map_dict.items():
         if colname in name_options:
             return standard_name
-    return pd.NA
+    return None
 
 def extract_test_method_with_result(*, test_method: str, result: str) -> tuple:
     """Creates separate NS1 and IgM columns with corresponding result if test_method and result variables provided

@@ -37,3 +37,49 @@ def map_column(*, columnname: str, map_dict: dict) -> str:
         if colname in name_options:
             return standard_name
     return pd.NA
+
+def extract_test_method_with_result(*, test_method: str, result: str) -> tuple:
+    """Creates separate NS1 and IgM columns with corresponding result if test_method and result variables provided
+
+    Args:
+        test_method (str): test method - IgM, NS1 or both
+        result (str): whether positive or negative
+
+    Returns:
+        tuple: (NS1 result, IgM result)
+    """
+
+    if pd.isna(test_method):
+        return (pd.NA, pd.NA)
+
+    else:
+        test1, test2 = ("", "")
+
+        if re.search(r"NS1", str(test_method), re.IGNORECASE):
+            test1 = result
+        if re.search(r"IgM", str(test_method), re.IGNORECASE):
+            test2 = result
+        return (test1, test2)
+
+
+def extract_test_method_without_result(*, test_method: str) -> tuple:
+    """Creates separate NS1 and IgM columns with positive as default result if only test_method is provided
+
+    Args:
+        test_method (str): test method - IgM, NS1 or both
+
+    Returns:
+        tuple: (NS1 result, IgM result)
+    """
+    if pd.isna(test_method):
+        return (pd.NA, pd.NA)
+
+    else:
+        test1, test2 = ("", "")
+
+        if re.search(r"NS1", str(test_method), re.IGNORECASE):
+            test1 = "Positive"
+        if re.search(r"IgM", str(test_method), re.IGNORECASE):
+            test2 = "Positive"
+        return (test1, test2)
+

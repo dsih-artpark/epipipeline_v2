@@ -66,25 +66,25 @@ def standardise_age(age:str) -> float:
     else:
         return pd.NA
 
-def validate_age(x, upper_limit=105):
+def validate_age(*, age: float, upper_limit: float =105) -> float:
     """Validates age range
 
     Args:
-        x: Age (as float/NaT)
+        age: Age (as float/NaT)
         upper_limit(int): Upper limit for age
 
     Returns:
         float/NaT: <0 Age <106
     """
-    if isinstance(x, float):
-        if x>0 and x<=upper_limit:
+    if isinstance(age, float):
+        if age>0 and x<=upper_limit:
             return x
-        elif x>0:
-            return x//10
+        elif age>0:
+            return age//10
         else:
             return pd.NA
     else:
-        return x
+        return age
 
 
 def standardise_gender(gender:str)->str:

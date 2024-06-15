@@ -3,26 +3,26 @@ import re
 import pandas as pd
 
 
-def clean_strings(x:str)->str:
+def clean_strings(*, s:str)->str:
     """Standardises string entries
 
     Args:
-        x (str): string entries in the raw dataset
+        s (str): string entries in the raw dataset
 
     Returns:
         str: null for entries without  a single alphabet, no extraspaces/whitespaces, upper case
     """
 
-    if isinstance(x, str):
-        if re.search(r'[A-Za-z]', x):
-            x=re.sub(r'[\.\,\-\)\(]',' ', x)
-            x=re.sub(r'[^a-zA-Z0-9\s]+', '', x)
-            x=re.sub(r'\s+', ' ', x).strip()
-            return x.lstrip().rstrip().upper()
+    if isinstance(s, str):
+        if re.search(r'[A-Za-z]', s):
+            s=re.sub(r'[\.\,\-\)\(]',' ', s)
+            s=re.sub(r'[^a-zA-Z0-9\s]+', '', s)
+            s=re.sub(r'\s+', ' ', s).strip()
+            return s.lstrip().rstrip().upper()
     return pd.NA
 
 
-def standardise_age(age:str) -> float:
+def standardise_age(*, age:str) -> float:
     """Extracts year and month from string age entries
 
     Args:
@@ -77,8 +77,8 @@ def validate_age(*, age: float, upper_limit: float =105) -> float:
         float/NaT: <0 Age <106
     """
     if isinstance(age, float):
-        if age>0 and x<=upper_limit:
-            return x
+        if age>0 and age<=upper_limit:
+            return age
         elif age>0:
             return age//10
         else:
@@ -87,7 +87,7 @@ def validate_age(*, age: float, upper_limit: float =105) -> float:
         return age
 
 
-def standardise_gender(gender:str)->str:
+def standardise_gender(*, gender:str)->str:
     """Standardises gender
 
     Args:
@@ -107,7 +107,7 @@ def standardise_gender(gender:str)->str:
         return 'UNKNOWN'
 
 
-def standardise_test_result(result:str) -> str:
+def standardise_test_result(*, result:str) -> str:
     """Standardises results to positive or negative
 
     Args:
@@ -124,7 +124,7 @@ def standardise_test_result(result:str) -> str:
     return "UNKNOWN"
 
 
-def generate_test_count(test1:str, test2:str)->int:
+def generate_test_count(*, test1:str, test2:str)->int:
     """Generates test count from test result variables
 
     Args:
@@ -143,76 +143,76 @@ def generate_test_count(test1:str, test2:str)->int:
         return 0
 
 
-def opd_ipd(x:str) -> str:
+def opd_ipd(*, s:str) -> str:
     """Standardises entries for IPD or OPD
 
     Args:
-        x (str): IPD/OPD field in the dataset
+        s (str): IPD/OPD field in the dataset
 
     Returns:
         str: standardised value for IPD or OPD
     """
 
-    if isinstance(x, str):
-        if re.search(r"IPD?", x, re.IGNORECASE):
+    if isinstance(s, str):
+        if re.search(r"IPD?", s, re.IGNORECASE):
             return "IPD"
-        elif re.search(r"OPD?", x, re.IGNORECASE):
+        elif re.search(r"OPD?", s, re.IGNORECASE):
             return "OPD"
         else:
             return pd.NA
 
-def public_private(x:str) -> str:
+def public_private(*, s:str) -> str:
     """Standardises entries for private or public
 
     Args:
-        x (str): Private/Public field in the dataset
+        s (str): Private/Public field in the dataset
 
     Returns:
         str: standardised value for Private or Public
     """
 
-    if isinstance(x, str):
-        if re.search(r"Private|Pvt", x, re.IGNORECASE):
+    if isinstance(s, str):
+        if re.search(r"Private|Pvt", s, re.IGNORECASE):
             return "PRIVATE"
-        elif re.search(r"Public|Pub|Govt|Government", x, re.IGNORECASE):
+        elif re.search(r"Public|Pub|Govt|Government", s, re.IGNORECASE):
             return "PUBLIC"
         else:
             return pd.NA
 
 
-def active_passive(x:str) -> str:
+def active_passive(*, s:str) -> str:
     """Standardises entries for active or passive
 
     Args:
-        x (str): Active/Passive field in the dataset
+        s (str): Active/Passive field in the dataset
 
     Returns:
         str: standardised value for Active or Passive
     """
 
-    if isinstance(x, str):
-        if re.search(r"Acti?v?e?|A", x, re.IGNORECASE):
+    if isinstance(s, str):
+        if re.search(r"Acti?v?e?|A", s, re.IGNORECASE):
             return "ACTIVE"
-        elif re.search(r"Pas?s?i?v?e?|P", x, re.IGNORECASE):
+        elif re.search(r"Pas?s?i?v?e?|P", s, re.IGNORECASE):
             return "PASSIVE"
         else:
             return pd.NA
 
 
-def rural_urban(x:str) -> str:
+def rural_urban(*, s:str) -> str:
     """Standardises entries for rural or urban
 
     Args:
-        x (str): Rural/Urban field in the dataset
+        s (str): Rural/Urban field in the dataset
 
     Returns:
         str: standardised value for Rural or Urban
     """
 
-    if isinstance(x, str):
-        if re.search(r"Rura?l?|R", x, re.IGNORECASE):
+    if isinstance(s, str):
+        if re.search(r"Rura?l?|R", s, re.IGNORECASE):
             return "RURAL"
-        elif re.search(r"Urba?n?|U", x, re.IGNORECASE):
+        elif re.search(r"Urba?n?|U", s, re.IGNORECASE):
             return "URBAN"
         else:
             return pd.NA

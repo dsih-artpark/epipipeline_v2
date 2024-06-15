@@ -107,19 +107,19 @@ def standardise_gender(gender:str)->str:
         return 'UNKNOWN'
 
 
-def standardise_test_result(x:str) -> str:
+def standardise_test_result(result:str) -> str:
     """Standardises results to positive or negative
 
     Args:
-        x (str): Result in the raw dataset
+        result (str): Result in the raw dataset
 
     Returns:
         str: Negative, Positive or Unknown
     """
-    if isinstance(x, str) or isinstance(x, int):
-        if re.search(r"-ve|Neg|Negative|No|0", str(x), re.IGNORECASE):
+    if isinstance(result, str) or isinstance(result, int):
+        if re.search(r"-ve|Neg|Negative|No|0", str(result), re.IGNORECASE):
             return "NEGATIVE"
-        elif re.search(r"NS1|IgM|D|Yes|\+ve|Pos|Positive|1", str(x), re.IGNORECASE):
+        elif re.search(r"NS1|IgM|D|Yes|\+ve|Pos|Positive|1", str(result), re.IGNORECASE):
             return "POSITIVE"
     return "UNKNOWN"
 

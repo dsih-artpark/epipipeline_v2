@@ -1,4 +1,5 @@
 import re
+import pandas as pd
 
 
 def clean_colname(*, colname: str) -> str:
@@ -19,8 +20,8 @@ def clean_colname(*, colname: str) -> str:
     return colname
 
 
-def map_columns(*, columnlist: list, map_dict: dict) -> str:
-    """Maps column names to standard column names using mapper provided
+def map_column(*, columnname: str, map_dict: dict) -> str:
+    """Maps column name to standard column name using mapper provided
 
     Args:
         colname (str): Current column in DataFrame
@@ -29,14 +30,10 @@ def map_columns(*, columnlist: list, map_dict: dict) -> str:
     Returns:
         str: Standardised column name
     """
-    assert isinstance(columnlist, list) and isinstance(
+    assert isinstance(columnname, str) and isinstance(
         map_dict, dict), "Invalid input type for column name or dictionary"
 
-    header_mapper = {}
-
-    for colname in columnlist:
-        for standard_name, name_options in map_dict.items():
-            if colname in name_options:
-                header_mapper[colname] = standard_name
-
-    return header_mapper
+    for standard_name, name_options in map_dict.items():
+        if colname in name_options:
+            return standard_name
+    return pd.NA

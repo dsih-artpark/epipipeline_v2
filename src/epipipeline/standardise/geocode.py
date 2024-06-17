@@ -48,5 +48,9 @@ def geocode(*, full_address: str, API_key: str) -> tuple:
                 long = geocode_result[0]['geometry']['location']['lng']
                 return (lat, long)
             else:
-                logger.info(f"No result returned")
+                logger.info(f"No result returned for {full_address")
                 return (pd.NA,pd.NA)
+        except Exception as e:
+            logger.info(f"Error returned for {full_address}: {e}")
+            return (pd.NA, pd.NA)
+            

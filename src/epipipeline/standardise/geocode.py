@@ -4,6 +4,7 @@ from googlemaps import Client as GoogleMaps
 import googlemaps
 import gmaps
 import logging
+import time
 
 logger = logging.getLogger("standardise.geocode")
 
@@ -41,6 +42,7 @@ def geocode(*, full_address: str, API_key: str) -> tuple:
         assert isinstance(full_address, str) and isinstance(
             API_key, str) and len(API_key) == 39, "invalid input"
         gmaps = googlemaps.Client(key=API_key)
+        time.sleep(0.1)
         try:
             geocode_result = gmaps.geocode(full_address)
             if geocode_result:
@@ -53,4 +55,6 @@ def geocode(*, full_address: str, API_key: str) -> tuple:
         except Exception as e:
             logger.info(f"Error returned for {full_address}: {e}")
             return (pd.NA, pd.NA)
+            
+        
             

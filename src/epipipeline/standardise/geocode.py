@@ -14,17 +14,24 @@ logging.captureWarnings(True)
 
 
 def get_api_key(*, encrypted_file_path: str = "~/config.enc"):
+    """Retrieves API Key stored in an openssl pbkdf2 encrypted file"
+
+    Args:
+        encrypted_file_path (str, optional): path to .enc file. Defaults to "~/config.enc".
+    """
+    MyAPI = None
 
     encrypted_file = "~/config.enc"
 
     # Command to decrypt using OpenSSL - You will be prompted to enter the openssl password used for encryption
-    command = f"openssl aes-256-cbc -d -salt -in {encrypted_file}"
+    command = f"openssl aes-256-cbc -d -pbkdf2 -salt -in {encrypted_file}"
 
     try:
         MyAPI = subprocess.check_output(command, shell=True, text=True).strip()
     except subprocess.CalledProcessError as e:
         logger.error(f"Error getting API Key: {e}")
         raise
+    return MyAPI
 
 # Geocoding function
 

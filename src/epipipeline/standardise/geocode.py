@@ -120,7 +120,7 @@ def geocode(*, addresses: pd.Series, batch_size: int = 0, API_key: str):
         return pd.Series(all_geocoded_results)
 
 
-def check_bounds(lat, long, regionID: str = None, dsid: str = None, local_file_path: str = None):
+def check_bounds(lat, long, regionID: str = None, dsid: str = "GS0012DS0051", local_file_path: str = None):
     """Validates if provided lat, long are within bounds of shape/polygon. Returns pd.NA if outside bound
 
     Args:

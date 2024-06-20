@@ -52,7 +52,8 @@ def geocode(*, addresses: pd.Series, batch_size: int = 0, API_key: str):
         addresses, pd.Series), "addresses must be a pandas Series"
     assert isinstance(API_key, str) and len(
         API_key) >= 35, "Invalid API key length"
-    assert isinstance(batch_size, int > 0), "Batch size must an integer >=0"
+    assert isinstance(
+        batch_size, int) and batch_size >= 0, "Batch size must an integer >=0"
 
     try:
         gmaps = googlemaps.Client(key=API_key)

@@ -7,7 +7,6 @@ import subprocess
 import geopandas as gpd
 from shapely.geometry import Point
 import re
-from dataio.download import download_dataset_v2
 import os
 from typing import Union
 
@@ -122,21 +121,22 @@ def geocode(*, addresses: pd.Series, batch_size: int = 0, API_key: str):
 
 
 def check_bounds(lat: Union[float, pd.Series], long: Union[float, pd.Series], regionID: str, geojson_dir: str = "data/GS0012DS0051-Shapefiles_India/geojsons/individual/"):
-    """Returns lat, long positions are within a polygon, else returns Null
+    """
+    Returns lat, long positions if within a polygon, else returns Null
 
     Args:
         lat (Union[float, pd.Series]): Latitude (float or pd.Series)
         long (Union[float, pd.Series]): Longitude (float or pd.Series)
-        regionID (str): standardised regionID
+        regionID (str): Standardized regionID
         geojson_dir (str, optional): Directory to geojson. Defaults to "data/GS0012DS0051-Shapefiles_India/geojsons/individual/".
 
     Raises:
         TypeError: Invalid data type for lat, long
         ValueError: Invalid regionID
-        e: Unable to read geojson
+        IOError: Unable to read geojson
 
     Returns:
-        pd.Series: lat, long if within bounds of polygon, else pd.NA
+        Union[pd.Series, tuple]: lat, long if within bounds of polygon, else pd.NA
     """
 
     # Check lat, long input validity - either pd.Series or float - convert floats to series
@@ -148,41 +148,28 @@ def check_bounds(lat: Union[float, pd.Series], long: Union[float, pd.Series], re
             "Latitude and Longitude must be floats or pandas Series")
 
     # Check validity of regionID
-    try:
-        assert re.match(r'^(state|district|subdistrict|ulb|village)\_\d{2,6}$', regionID) or re.match(
-            r'^(zone|ward)\_\d{2,6}\-\d{1,2}$', regionID)
-    except AssertionError as e:
-        raise ValueError(f"Invalid regionid {e}")
+    if not re.match(r'^(state|district|subdistrict|ulb|village)_\d{2,6}$', regionID) and not re.match(r'^(zone|ward)_\d{2,6}-\d{1,6}$', regionID):
+        raise ValueError(f"Invalid regionID: {regionID}")
 
-    # Set file path
-    # Directory ends with /, join with regionID
-    if geojson_dir.endswith("/"):
-        geojson_path = os.path.join(geojson_dir, regionID, ".geojson")
-    # User provides file instead of dir, no joins
-    elif geojson_dir.endswith(".geojson"):
-        geojson_path = geojson_dir
-    # Directory does not end with /, join with /
-    else:
-        geojson_path = os.path.join(geojson_dir, "/", regionID, ".geojson")
+    # Construct file path
+    geojson_path = os.path.join(geojson_dir, regionID + ".geojson")
 
+    # Read the geojson file
     try:
         polygon = gpd.read_file(geojson_path)
     except Exception as e:
-        logging.error(f"Failed to open geojson file provided: {e}")
-        raise e
+        raise IOError(f"Failed to open geojson file: {e}")
 
-    # Create a series of points with long, lat or None for nan values
-    points = pd.Series([Point(long_, lat_) if not (
-        pd.isna(lat_) or pd.isna(long_)) else None for long_, lat_ in zip(long, lat)])
+    # Create a series of points
+    points = [Point(lon, lat) if not pd.isna(lat) and not pd.isna(
+        lon) else None for lon, lat in zip(long, lat)]
 
     # Check if each point is within any of the geometries
-    contains = points.apply(lambda point: polygon.geometry.contains(
-        point).any() if point else False)
+    contains = pd.Series([polygon.geometry.contains(
+        point).any() if point else False for point in points])
 
-    # Return lat, long or pd.NA
+    # Return lat, long  series or pd.NA
     result = pd.Series([(lat_, long_) if contained else (pd.NA, pd.NA)
                        for lat_, long_, contained in zip(lat, long, contains)])
 
-    if len(result) == 1:
-        return result.iloc[0]
-    return result
+    return result.iloc[0] if len(result) == 1 else result

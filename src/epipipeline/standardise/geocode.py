@@ -7,8 +7,8 @@ import subprocess
 import geopandas as gpd
 from shapely.geometry import Point
 import re
-from dataio.download import download_dataset_v2
 import os
+from typing import Union
 
 
 # Set up logging
@@ -120,89 +120,56 @@ def geocode(*, addresses: pd.Series, batch_size: int = 0, API_key: str):
         return pd.Series(all_geocoded_results)
 
 
-def check_bounds(lat, long, regionID: str = None, dsid: str = "GS0012DS0051", local_file_path: str = None):
-    """Validates if provided lat, long are within bounds of shape/polygon. Returns pd.NA if outside bound
+def check_bounds(lat: Union[float, pd.Series], long: Union[float, pd.Series], regionID: str, geojson_dir: str = "data/GS0012DS0051-Shapefiles_India/geojsons/individual/"):
+    """
+    Returns lat, long positions if within a polygon, else returns Null
 
     Args:
-        lat (float/pd.Series of floats): latitude
-        long (float/pd.Series of floats): longitude
-        regionID (str, optional): dsih-artpark regionID/geojson filename if geojson on aws s3. Defaults to None.
-        dsid (str, optional): dsid if geojson on aws s3
-        local_file_path (str, optional): local file path with .geojson extension if geojson stored locally. Defaults to None.
+        lat (Union[float, pd.Series]): Latitude (float or pd.Series)
+        long (Union[float, pd.Series]): Longitude (float or pd.Series)
+        regionID (str): Standardized regionID
+        geojson_dir (str, optional): Directory to geojson. Defaults to "data/GS0012DS0051-Shapefiles_India/geojsons/individual/".
 
     Raises:
-        TypeError: Lat & Long must be float
-        FileNotFoundError: If geojson file is not found
-        e: Exceptions
+        TypeError: Invalid data type for lat, long
+        ValueError: Invalid regionID
+        IOError: Unable to read geojson
 
     Returns:
-        _type_: lat, long if valid or pd.NA, pd.NA
-
-    Returns:
-        _type_: tuple/series of tuples
+        Union[pd.Series, tuple]: lat, long if within bounds of polygon, else pd.NA
     """
 
-    # Check lat, long input validity - either pd.Series or float
-    if isinstance(lat, (float, int)) and isinstance(long, (float, int)):
+    # Check lat, long input validity - either pd.Series or float - convert floats to series
+    if isinstance(lat, float) and isinstance(long, float):
         lat = pd.Series([lat])
         long = pd.Series([long])
     elif not (isinstance(lat, pd.Series) and isinstance(long, pd.Series)):
         raise TypeError(
             "Latitude and Longitude must be floats or pandas Series")
 
-    # Check for NaN values in lat and long
-    points = pd.Series([Point(long_, lat_) if not (
-        pd.isna(lat_) or pd.isna(long_)) else None for long_, lat_ in zip(long, lat)])
+    # Check validity of regionID
+    if not re.match(r'^(state|district|subdistrict|ulb|village)_\d{2,6}$', regionID) and not re.match(r'^(zone|ward)_\d{2,6}-\d{1,6}$', regionID):
+        raise ValueError(f"Invalid regionID: {regionID}")
 
-    # Validate input combinations
-    assert (regionID and dsid) or local_file_path, "Input Error: Provide regionID and dsid or local file path to geojson"
+    # Construct file path
+    geojson_path = os.path.join(geojson_dir, regionID + ".geojson")
 
-    # Validate regionID if provided
-    if regionID and dsid:
-        assert isinstance(regionID, str), "regionID must be a string"
-        assert re.match(r'^(state|district|subdistrict|ulb|village)\_\d{2,6}$', regionID) or \
-            re.match(r'^(zone|ward)\_\d{2,6}\-\d{1,2}$',
-                     regionID), "Invalid regionID format"
-    else:
-        assert isinstance(local_file_path, str) and local_file_path.endswith(
-            ".geojson"), "Input Error: Local file path must link to a geojson file"
-
-    # Downloading and loading geojson - one time exercise for series & floats
-    if regionID and dsid:
-        logger.info(f"Downloading the geojson file for {regionID}, {dsid}")
-
-        folder = download_dataset_v2(
-            dsid=dsid, contains_all=regionID, suffixes=".geojson")
-        dir_path = os.path.join("data", folder)
-
-        file_path = None
-        for root, _dirs, files in os.walk(dir_path):
-            for file in files:
-                if file.startswith(regionID):
-                    file_path = os.path.join(root, file)
-                    break  # File found, no need to continue the loop
-
-        if not file_path:
-            logging.error(
-                f"Failed to locate geojson file for regionID. Check local data folder/AWS S3 bucket")
-            raise FileNotFoundError("Geojson file for regionID not found")
-    else:
-        file_path = local_file_path
-
+    # Read the geojson file
     try:
-        polygon = gpd.read_file(file_path)
+        polygon = gpd.read_file(geojson_path)
     except Exception as e:
-        logging.error(f"Failed to open geojson file provided: {e}")
-        raise e
+        raise IOError(f"Failed to open geojson file: {e}")
+
+    # Create a series of points
+    points = [Point(lon, lat) if not pd.isna(lat) and not pd.isna(
+        lon) else None for lon, lat in zip(long, lat)]
 
     # Check if each point is within any of the geometries
-    contains = points.apply(lambda point: polygon.geometry.contains(
-        point).any() if point else False)
+    contains = pd.Series([polygon.geometry.contains(
+        point).any() if point else False for point in points])
 
-    # Return lat, long or pd.NA
+    # Return lat, long  series or pd.NA
     result = pd.Series([(lat_, long_) if contained else (pd.NA, pd.NA)
                        for lat_, long_, contained in zip(lat, long, contains)])
 
-    if len(result) == 1:
-        return result.iloc[0]
-    return result
+    return result.iloc[0] if len(result) == 1 else result

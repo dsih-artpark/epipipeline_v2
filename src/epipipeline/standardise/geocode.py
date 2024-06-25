@@ -4,6 +4,12 @@ import logging
 import time
 from tqdm import tqdm
 import subprocess
+import geopandas as gpd
+from shapely.geometry import Point
+import re
+from dataio.download import download_dataset_v2
+import os
+
 
 # Set up logging
 logger = logging.getLogger("standardise.geocode")
@@ -112,3 +118,91 @@ def geocode(*, addresses: pd.Series, batch_size: int = 0, API_key: str):
         # Geocode all addresses at once if no batch_size is provided
         all_geocoded_results = geocode_batch(addresses)
         return pd.Series(all_geocoded_results)
+
+
+def check_bounds(lat, long, regionID: str = None, dsid: str = "GS0012DS0051", local_file_path: str = None):
+    """Validates if provided lat, long are within bounds of shape/polygon. Returns pd.NA if outside bound
+
+    Args:
+        lat (float/pd.Series of floats): latitude
+        long (float/pd.Series of floats): longitude
+        regionID (str, optional): dsih-artpark regionID/geojson filename if geojson on aws s3. Defaults to None.
+        dsid (str, optional): dsid if geojson on aws s3
+        local_file_path (str, optional): local file path with .geojson extension if geojson stored locally. Defaults to None.
+
+    Raises:
+        TypeError: Lat & Long must be float
+        FileNotFoundError: If geojson file is not found
+        e: Exceptions
+
+    Returns:
+        _type_: lat, long if valid or pd.NA, pd.NA
+
+    Returns:
+        _type_: tuple/series of tuples
+    """
+
+    # Check lat, long input validity - either pd.Series or float
+    if isinstance(lat, (float, int)) and isinstance(long, (float, int)):
+        lat = pd.Series([lat])
+        long = pd.Series([long])
+    elif not (isinstance(lat, pd.Series) and isinstance(long, pd.Series)):
+        raise TypeError(
+            "Latitude and Longitude must be floats or pandas Series")
+
+    # Check for NaN values in lat and long
+    points = pd.Series([Point(long_, lat_) if not (
+        pd.isna(lat_) or pd.isna(long_)) else None for long_, lat_ in zip(long, lat)])
+
+    # Validate input combinations
+    assert (regionID and dsid) or local_file_path, "Input Error: Provide regionID and dsid or local file path to geojson"
+
+    # Validate regionID if provided
+    if regionID and dsid:
+        assert isinstance(regionID, str), "regionID must be a string"
+        assert re.match(r'^(state|district|subdistrict|ulb|village)\_\d{2,6}$', regionID) or \
+            re.match(r'^(zone|ward)\_\d{2,6}\-\d{1,2}$',
+                     regionID), "Invalid regionID format"
+    else:
+        assert isinstance(local_file_path, str) and local_file_path.endswith(
+            ".geojson"), "Input Error: Local file path must link to a geojson file"
+
+    # Downloading and loading geojson - one time exercise for series & floats
+    if regionID and dsid:
+        logger.info(f"Downloading the geojson file for {regionID}, {dsid}")
+
+        folder = download_dataset_v2(
+            dsid=dsid, contains_all=regionID, suffixes=".geojson")
+        dir_path = os.path.join("data", folder)
+
+        file_path = None
+        for root, _dirs, files in os.walk(dir_path):
+            for file in files:
+                if file.startswith(regionID):
+                    file_path = os.path.join(root, file)
+                    break  # File found, no need to continue the loop
+
+        if not file_path:
+            logging.error(
+                f"Failed to locate geojson file for regionID. Check local data folder/AWS S3 bucket")
+            raise FileNotFoundError("Geojson file for regionID not found")
+    else:
+        file_path = local_file_path
+
+    try:
+        polygon = gpd.read_file(file_path)
+    except Exception as e:
+        logging.error(f"Failed to open geojson file provided: {e}")
+        raise e
+
+    # Check if each point is within any of the geometries
+    contains = points.apply(lambda point: polygon.geometry.contains(
+        point).any() if point else False)
+
+    # Return lat, long or pd.NA
+    result = pd.Series([(lat_, long_) if contained else (pd.NA, pd.NA)
+                       for lat_, long_, contained in zip(lat, long, contains)])
+
+    if len(result) == 1:
+        return result.iloc[0]
+    return result

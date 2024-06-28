@@ -79,19 +79,22 @@ def geocode(*, addresses: pd.Series, batch_size: int = 0, API_key: str):
         """
         geocoded_results = []
         for address in tqdm(batch, desc="Geocoding addresses"):
-            try:
-                geocode_result = gmaps.geocode(address)
-                if geocode_result:
-                    lat = geocode_result[0]['geometry']['location']['lat']
-                    lng = geocode_result[0]['geometry']['location']['lng']
-                    geocoded_results.append((lat, lng))
-                else:
-                    logger.warning(f"No results for address: {address}")
-                    geocoded_results.append((pd.NA, pd.NA))
-            except Exception as e:
-                logger.error(f"Error geocoding {address}: {e}")
+            if pd.isna(address):
                 geocoded_results.append((pd.NA, pd.NA))
-            time.sleep(0.1)  # Time delay to respect rate limits
+            else:
+                try:
+                    geocode_result = gmaps.geocode(address)
+                    if geocode_result:
+                        lat = geocode_result[0]['geometry']['location']['lat']
+                        lng = geocode_result[0]['geometry']['location']['lng']
+                        geocoded_results.append((lat, lng))
+                    else:
+                        logger.warning(f"No results for address: {address}")
+                        geocoded_results.append((pd.NA, pd.NA))
+                except Exception as e:
+                    logger.error(f"Error geocoding {address}: {e}")
+                    geocoded_results.append((pd.NA, pd.NA))
+                time.sleep(0.1)  # Time delay to respect rate limits
         return geocoded_results
 
     if batch_size:

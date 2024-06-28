@@ -122,7 +122,7 @@ def standardise_ka_linelist_v3(*,
         # Geo-mapping
         ## Note: can be optimised to improve geo-mapping
         # Move BBMP from district to subdistrict/ulb field
-        # df.loc[df["location.admin2.name"]=="BBMP", "location.admin3.name"]="BBMP"
+        # df.loc[df["location.admin2.name"]=="Bbmp", "location.admin3.name"]="BBMP"
 
         assert len(df[df["location.admin2.ID"]=="admin_0"])==0, "District(s) missing"
 
@@ -137,7 +137,7 @@ def standardise_ka_linelist_v3(*,
         df["location.admin5.name"], df["location.admin5.ID"]=zip(*villages)
 
         # Extract admin hierarchy from admin3.ID - ULB, REVENUE, admin_0 (if missing ulb/subdistrict LGD code)
-        df["location.admin.hierarchy"]=df["location.admin3.ID"].apply(lambda x: "ULB" if x.startswith("ulb") else ("REVENUE" if x.startswith("subdistrict") else "admin_0"))  # noqa: E501
+        df["location.admin.hierarchy"]=df["location.admin3.ID"].apply(lambda x: "ULB" if x.startswith("ulb") else ("Revenue" if x.startswith("subdistrict") else "admin_0"))  # noqa: E501
 
         # Drop duplicates across all vars after standardisation
         df.drop_duplicates(inplace=True)

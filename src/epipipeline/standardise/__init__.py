@@ -18,7 +18,7 @@ def clean_strings(*, s:str)->str:
             s=re.sub(r'[\.\,\-\)\(]',' ', s)
             s=re.sub(r'[^a-zA-Z0-9\s]+', '', s)
             s=re.sub(r'\s+', ' ', s).strip()
-            return s.lstrip().rstrip().upper()
+            return s.lstrip().rstrip().title()
     return pd.NA
 
 
@@ -94,17 +94,17 @@ def standardise_gender(*, gender:str)->str:
         gender (str): gender entries in the raw dataset
 
     Returns:
-        str: FEMALE, MALE, UNKNOWN
+        str: Female, Male, Unknown
     """
 
-    gender = str(gender).upper().lstrip().rstrip()
+    gender = str(gender).title().lstrip().rstrip()
 
     if re.search(r'[fwgFWG]', gender):
-        return "FEMALE"
+        return "Female"
     elif re.search(r'^[mbMB]', gender):
-        return 'MALE'
+        return "Male"
     else:
-        return 'UNKNOWN'
+        return "Unknown"
 
 
 def standardise_test_result(*, result:str) -> str:
@@ -118,10 +118,10 @@ def standardise_test_result(*, result:str) -> str:
     """
     if isinstance(result, str) or isinstance(result, int):
         if re.search(r"-ve|Neg|Negative|No|0", str(result), re.IGNORECASE):
-            return "NEGATIVE"
+            return "Negative"
         elif re.search(r"NS1|IgM|D|Yes|\+ve|Pos|Positive|1", str(result), re.IGNORECASE):
-            return "POSITIVE"
-    return "UNKNOWN"
+            return "Positive"
+    return "Unknown"
 
 
 def generate_test_count(*, test1:str, test2:str)->int:
@@ -135,9 +135,9 @@ def generate_test_count(*, test1:str, test2:str)->int:
         int: number of test results known - 0, 1 or 2
     """
 
-    if test1!="UNKNOWN" and test2!="UNKNOWN":
+    if test1!="Unknown" and test2!="Unknown":
         return 2
-    elif test1!="UNKNOWN" or test2!="UNKNOWN":
+    elif test1!="Unknown" or test2!="Unknown":
         return 1
     else:
         return 0
@@ -173,9 +173,9 @@ def public_private(*, s:str) -> str:
 
     if isinstance(s, str):
         if re.search(r"Private|Pvt", s, re.IGNORECASE):
-            return "PRIVATE"
+            return "Private"
         elif re.search(r"Public|Pub|Govt|Government", s, re.IGNORECASE):
-            return "PUBLIC"
+            return "Public"
         else:
             return pd.NA
 
@@ -192,9 +192,9 @@ def active_passive(*, s:str) -> str:
 
     if isinstance(s, str):
         if re.search(r"Acti?v?e?|A", s, re.IGNORECASE):
-            return "ACTIVE"
+            return "Active"
         elif re.search(r"Pas?s?i?v?e?|P", s, re.IGNORECASE):
-            return "PASSIVE"
+            return "Passive"
         else:
             return pd.NA
 
@@ -211,8 +211,8 @@ def rural_urban(*, s:str) -> str:
 
     if isinstance(s, str):
         if re.search(r"Rura?l?|R", s, re.IGNORECASE):
-            return "RURAL"
+            return "Rural"
         elif re.search(r"Urba?n?|U", s, re.IGNORECASE):
-            return "URBAN"
+            return "Urban"
         else:
             return pd.NA

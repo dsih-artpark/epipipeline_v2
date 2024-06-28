@@ -55,13 +55,16 @@ def geocode(*, addresses: Union[pd.Series, str], batch_size: int = 0, API_key: s
     """
     if isinstance(addresses, str):
         addresses = pd.Series([addresses])
+        batch_size = 0
+        single_address = True
     elif isinstance(addresses, pd.Series):
-        pass
+        single_address = False
     else:
         raise ValueError("addresses must be either a pandas Series or a string")
         
     assert isinstance(API_key, str) and len(API_key) >= 35, "Invalid API key length"
     assert isinstance(batch_size, int) and batch_size >= 0, "Batch size must an integer >=0"
+
 
     try:
         gmaps = googlemaps.Client(key=API_key)
@@ -121,8 +124,12 @@ def geocode(*, addresses: Union[pd.Series, str], batch_size: int = 0, API_key: s
 
     else:
         # Geocode all addresses at once if no batch_size is provided
-        all_geocoded_results = geocode_batch(addresses)
-        return pd.Series(all_geocoded_results)
+        all_geocoded_results = pd.Series(geocode_batch(addresses))
+
+        if single_address:
+            return all_geocoded_results.iloc[0]
+        else:
+            return all_geocoded_results
 
 
 def check_bounds(lat: Union[float, pd.Series], long: Union[float, pd.Series], regionID: str, geojson_dir: str = "data/GS0012DS0051-Shapefiles_India/geojsons/individual/"):

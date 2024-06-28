@@ -20,12 +20,12 @@ def dist_mapping(*, stateID: str, districtName: str, df: pd.DataFrame, threshold
     if pd.isna(districtName):
         return (pd.NA, "admin_0")
 
-    districtName = str(districtName).upper().strip()
-    districtName = re.sub(r"GULBARGA", "KALABURAGI", districtName)
-    districtName = re.sub(r"\(?\sU\)?$", " URBAN", districtName)
-    districtName = re.sub(r"\(?\sR\)?$", " RURAL", districtName)
-    districtName = re.sub(r"BIJAPUR", "VIJAYAPURA", districtName)
-    districtName = re.sub('\b(B[AE]NGAL[OU]R[UE](?!\s*RURAL)|BBMP)\b', "BENGALURU URBAN", districtName)
+    districtName = str(districtName).title().strip()
+    districtName = re.sub(r"Gulbarga", "Kalaburagi", districtName, flags=re.IGNORECASE)
+    districtName = re.sub(r"\(?\sU\)?$", " Urban", districtName, flags=re.IGNORECASE)
+    districtName = re.sub(r"\(?\sR\)?$", " Rural", districtName, flags=re.IGNORECASE)
+    districtName = re.sub(r"Bijapur", "Vijayapura", districtName, flags=re.IGNORECASE)
+    districtName = re.sub('\b(B[ae]ngal[ou]r[ue](?!\s*Rural)|Bbmp)\b', "Bengaluru Urban", districtName, flags=re.IGNORECASE)
 
     districts = df[df["parentID"] == stateID]["regionName"].to_list()
     match = process.extractOne(districtName, districts, score_cutoff=threshold)
@@ -53,10 +53,10 @@ def subdist_ulb_mapping(districtID: str, subdistName: str, df: pd.DataFrame, thr
     if pd.isna(subdistName):
         return (pd.NA, "admin_0")
 
-    subdistName = str(subdistName).upper().strip()
-    subdistName = re.sub(r'\(?\sU\)?$', " URBAN",
+    subdistName = str(subdistName).title().strip()
+    subdistName = re.sub(r'\(?\sU\)?$', "Urban",
                          subdistName, flags=re.IGNORECASE)
-    subdistName = re.sub(r'\(?\sR\)?$', " RURAL",
+    subdistName = re.sub(r'\(?\sR\)?$', "Rural",
                          subdistName, flags=re.IGNORECASE)
     subdistricts = df[df["parentID"] == districtID]["regionName"].to_list()
     match = process.extractOne(
@@ -85,7 +85,7 @@ def village_ward_mapping(subdistID: str, villageName: str, df: pd.DataFrame, thr
     if pd.isna(villageName):
         return (pd.NA, "admin_0")
 
-    villageName = str(villageName).upper().strip()
+    villageName = str(villageName).title().strip()
     villages = df[df["parentID"] == subdistID]["regionName"].to_list()
     match = process.extractOne(villageName, villages, score_cutoff=threshold)
     if match:

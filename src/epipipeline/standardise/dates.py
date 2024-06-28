@@ -61,7 +61,7 @@ def string_clean_dates(date) -> datetime:
 
 
 def fix_year_hist(Date: datetime.datetime, current_year: int) -> datetime.datetime:
-    """Fixes year to current year/next year/previous year where year is not equal to the current year
+    """Fixes year to current year/next year/previous year where year is not equal to the current year. Use only while processing line-lists by year.
 
     Args:
         Date (datetime.datetime): date variable in datetime format

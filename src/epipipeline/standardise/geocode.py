@@ -78,7 +78,7 @@ def geocode(*, addresses: pd.Series, batch_size: int = 0, API_key: str):
             pd.Series: pandas Series of lat, long positions
         """
         geocoded_results = []
-        for address in tqdm(batch, desc="Geocoding addresses"):
+        for address in tqdm.tqdm(batch, desc="Geocoding addresses"):
             try:
                 geocode_result = gmaps.geocode(address)
                 if geocode_result:

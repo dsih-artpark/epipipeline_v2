@@ -116,6 +116,7 @@ def standardise_ka_linelist_v3(*,
         # Clean string vars
         for var in STR_VARS:
             if var in df.columns:
+                df[var]=df[var].astype(str)
                 df[var]=df[var].apply(lambda x: clean_strings(x))
 
         # Geo-mapping

@@ -42,24 +42,26 @@ def get_api_key(*, encrypted_file_path: str = "~/config.enc"):
 # Geocoding function
 
 
-def geocode(*, addresses: pd.Series, batch_size: int = 0, API_key: str):
+def geocode(*, addresses: Union[pd.Series, str], batch_size: int = 0, API_key: str):
     """Uses Google Maps API to convert addresses to lat, long positions
 
     Args:
-        addresses (pd.Series): pandas column/series with addresses
+        addresses (pd.Series or str): pandas series/str with address(es)
         batch_size (int): number of rows to process in a batch, optional
         API_key (str): Google Maps API key from GCP
 
     Returns:
         pd.Series: pandas Series with lat, long positions
     """
-
-    assert isinstance(
-        addresses, pd.Series), "addresses must be a pandas Series"
-    assert isinstance(API_key, str) and len(
-        API_key) >= 35, "Invalid API key length"
-    assert isinstance(
-        batch_size, int) and batch_size >= 0, "Batch size must an integer >=0"
+    if isinstance(addresses, str):
+        addresses = pd.Series([addresses])
+    elif isinstance(addresses, pd.Series):
+        pass
+    else:
+        raise ValueError("addresses must be either a pandas Series or a string")
+        
+    assert isinstance(API_key, str) and len(API_key) >= 35, "Invalid API key length"
+    assert isinstance(batch_size, int) and batch_size >= 0, "Batch size must an integer >=0"
 
     try:
         gmaps = googlemaps.Client(key=API_key)

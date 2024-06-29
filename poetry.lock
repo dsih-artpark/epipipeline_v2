@@ -193,13 +193,14 @@ develop = false
 boto3 = "^1.34.64"
 pandas = "^2.2.1"
 pyyaml = "^6.0.1"
+requests = "^2.32.2"
 setuptools = "^69.5.1"
 
 [package.source]
 type = "git"
-url = "git@github.com:dsih-artpark/dataio.git"
+url = "https://github.com/dsih-artpark/dataio.git"
 reference = "HEAD"
-resolved_reference = "2b6992977c599e0a7d8b7512ddb8d8114100d121"
+resolved_reference = "7a4d677fda02449888f1a5eca2ea28b1d2ee88c1"
 
 [[package]]
 name = "decorator"
@@ -264,6 +265,19 @@ files = [
 
 [package.extras]
 speedup = ["python-levenshtein (>=0.12)"]
+
+[[package]]
+name = "googlemaps"
+version = "4.10.0"
+description = "Python client library for Google Maps Platform"
+optional = false
+python-versions = ">=3.5"
+files = [
+    {file = "googlemaps-4.10.0.tar.gz", hash = "sha256:3055fcbb1aa262a9159b589b5e6af762b10e80634ae11c59495bd44867e47d88"},
+]
+
+[package.dependencies]
+requests = ">=2.20.0,<3.0"
 
 [[package]]
 name = "idna"
@@ -876,13 +890,13 @@ full = ["numpy"]
 
 [[package]]
 name = "requests"
-version = "2.31.0"
+version = "2.32.3"
 description = "Python HTTP for Humans."
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "requests-2.31.0-py3-none-any.whl", hash = "sha256:58cd2187c01e70e6e26505bca751777aa9f2ee0b7f4300988b709f44e013003f"},
-    {file = "requests-2.31.0.tar.gz", hash = "sha256:942c5a758f98d790eaed1a29cb6eefc7ffb0d1cf7af05c3d2791656dbd6ad1e1"},
+    {file = "requests-2.32.3-py3-none-any.whl", hash = "sha256:70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6"},
+    {file = "requests-2.32.3.tar.gz", hash = "sha256:55365417734eb18255590a9ff9eb97e9e1da868d4ccd6402399eaf68af20a760"},
 ]
 
 [package.dependencies]
@@ -1042,4 +1056,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9.0"
-content-hash = "aba54cd64495b1acc21e13f263827a177a82f239d79e01fc0205181bc8e5b18d"
+content-hash = "aebb52e3c6cbdc171da979232d07b5c0854096ebaf98a2190fa0bde90443c207"

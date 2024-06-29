@@ -1,4 +1,4 @@
-# README.MD - epipipeline v3.0.1
+# README.MD - epipipeline v3.0.2
 
 This package contains various functions and tools to fetch, preprocess, and standardise epidemiological data.
 

@@ -15,7 +15,7 @@ openpyxl = "^3.1.2"
 python-levenshtein = "^0.25.0"
 pyyaml = "^6.0.1"
 ipython = "^8.0.0"
-dataio = {git = "https://github.com:dsih-artpark/dataio.git"}
+dataio = {git = "https://github.com/dsih-artpark/dataio.git"}
 
 
 [build-system]

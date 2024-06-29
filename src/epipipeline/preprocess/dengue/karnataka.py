@@ -7,7 +7,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 from dataio.download import download_dataset_v2
-from epipipeline.preprocess import clean_colname, map_columns
+from epipipeline.preprocess import clean_colname, map_column
 
 # Set up logging
 logger = logging.getLogger("epipipeline.preprocess.dengue.karnataka")
@@ -216,13 +216,13 @@ def preprocess_ka_linelist_v2(*,
         # Correct any header errors specific to the districtID
 
         if districtID in district_specific_errors.keys():
-            header_mapper=map_columns(columnlist=df.columns, map_dict=district_specific_errors[districtID])
+            header_mapper=map_column(columnlist=df.columns, map_dict=district_specific_errors[districtID])
             # Rename columns based on the mapping
             df = df.rename(columns=header_mapper)
             logger.debug(f"Renamed columns for district {districtID} based on specific errors: {header_mapper}")
 
         # Rename all recognised columns to standard names
-        header_mapper=map_columns(columnlist=df.columns, map_dict=standard_mapper)
+        header_mapper=map_column(columnlist=df.columns, map_dict=standard_mapper)
         df = df.rename(columns=header_mapper)
         logger.debug(f"Renamed columns for district {districtID} to standard names: {header_mapper}")
 

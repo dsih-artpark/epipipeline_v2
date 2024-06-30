@@ -22,7 +22,7 @@ def clean_colname(*, colname: str) -> str:
     return colname
 
 
-def map_column(*, colname: str, map_dict: dict) -> str:
+def map_column(*, colname: list, map_dict: dict) -> str:
     """Maps column name to standard column name using mapper provided
 
     Args:
@@ -32,13 +32,15 @@ def map_column(*, colname: str, map_dict: dict) -> str:
     Returns:
         str: Standardised column name
     """
-    assert isinstance(colname, str) and isinstance(
+    assert isinstance(colname, list) and isinstance(
         map_dict, dict), "Invalid input type for column name or dictionary"
 
+    col_mapper = {}
     for standard_name, name_options in map_dict.items():
         if colname in name_options:
-            return standard_name
-    return None
+            col_mapper[colname] = standard_name
+
+    return col_mapper
 
 def extract_test_method_with_result(*, test_method: str, result: str) -> tuple:
     """Creates separate NS1 and IgM columns with corresponding result if test_method and result variables provided

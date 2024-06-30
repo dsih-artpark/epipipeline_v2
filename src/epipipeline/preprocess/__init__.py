@@ -13,7 +13,8 @@ def clean_colname(*, colname: str) -> str:
         str: clean column name after removing special characters, double spaces and replacing single spaces with _
     """
 
-    assert isinstance(colname, str), "Column name must be a string"
+    # assert isinstance(colname, str), "Column name must be a string"
+    colname = str(colname)
     colname = re.sub(r"[^\w\s]", "", colname.strip().lower())
     colname = re.sub(r"(\s+)", " ", colname)
     colname = re.sub(r"\s", "_", colname)

@@ -41,23 +41,23 @@ def fix_symptom_date(*, symptomDate: str, resultDate: str) -> datetime.datetime:
     return (symptomDate, resultDate)
 
 
-def string_clean_dates(*, date) -> datetime:
+def string_clean_dates(*, Date) -> datetime:
     """Nullifies dates with no number, cleans extraneous elements in dates, and converts to datetime format
 
     Args:
-        date (str or datetime or NaT): date in dataset
+        Date (str or datetime or NaT): date in dataset
 
     Returns:
         datetime: date in datetime format
     """
 
-    if not re.search(r"\d", str(date)):
+    if not re.search(r"\d", str(Date)):
         return pd.NA
     else:
-        date = re.sub(r"\-\-", "-", str(date))
+        Date = re.sub(r"\-\-", "-", str(Date))
     try:
-        date = pd.to_datetime(date, format="mixed")
-        return date
+        Date = pd.to_datetime(Date, format="mixed")
+        return Date
     except ValueError:
         return pd.NA
 
@@ -191,7 +191,7 @@ def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, 
     return (earlyDate, lateDate)
 
 
-def check_date_to_today(*, date: datetime.datetime, tagDate=None, districtID=None, districtName=None) -> datetime:
+def check_date_to_today(*, date: datetime.datetime, tagDate: datetime.datetime=None) -> datetime:
     """Nullifies dates that are greater than current date
 
     Args:

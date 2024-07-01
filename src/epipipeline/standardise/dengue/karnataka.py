@@ -26,7 +26,7 @@ logging.captureWarnings(True)
 
 def standardise_ka_linelist_v3(*,
                                preprocessed_data_dict, CURRENT_YEAR, THRESHOLDS, STR_VARS,
-                               regionIDs_df, regionIDs_dict, accepted_headers, tagDate=None):
+                               regionIDs_df, regionIDs_dict, accepted_headers, headers_access, tagDate=None):
 
     standardise_data_dict = dict()
     for districtID in preprocessed_data_dict.keys():
@@ -152,8 +152,8 @@ def standardise_ka_linelist_v3(*,
         df = df.dropna(subset = ["metadata.nameAddress","metadata.primaryDate","demographics.age","demographics.gender"], thresh=2)
 
          # removing PII vars - check that accepted_headers is pulling in data_dictionary in metadata.yaml
-        for header in accepted_headers:
-            if header["access"]==False:
+        for header in headers:
+            if not headers_access[header]:
                 df=df.drop(columns=header)
 
         standardise_data_dict[districtID] = df

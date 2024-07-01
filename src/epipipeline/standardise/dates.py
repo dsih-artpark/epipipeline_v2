@@ -61,7 +61,8 @@ def string_clean_dates(date) -> datetime:
 
 
 def fix_year_hist(Date: datetime.datetime, current_year: int) -> datetime.datetime:
-    """Fixes year to current year/next year/previous year where year is not equal to the current year. Use only while processing line-lists by year.
+    """Fixes year to current year/next year/previous year where year is not equal to the current year. Use only
+        while processing line-lists by year.
 
     Args:
         Date (datetime.datetime): date variable in datetime format
@@ -177,7 +178,7 @@ def fix_two_dates(earlyDate: datetime.datetime, lateDate: datetime.datetime) -> 
         return (earlyDate, lateDate)  # returns original dates if dates meet logical conditions
 
 
-def check_date_to_today(*, date: datetime.datetime, tagDate: datetime.datetime = None) -> datetime:
+def check_date_to_today(*, date: datetime.datetime, tagDate = None, districtID = None, districtName = None) -> datetime:
     """Nullifies dates that are greater than current date
 
     Args:

@@ -207,28 +207,31 @@ def preprocess_ka_linelist_v2(*,
             df = df.iloc[2:].reset_index(drop=True)
 
         # Clean all headers, remove special characters
-        headers=[clean_colname(colname=col) for col in df.columns]
+        logger.debug(f"Original headers for district {districtID}: {headers}")
+        headers=[clean_colname(colname=col) for col in headers]
 
         # Set cleaned headers to the dataframe
         df.columns = headers
-        logger.debug(f"Cleaned headers for district {districtID}: {headers}")
+        logger.debug(f"Cleaned headers for district {districtID}: {df.columns}")
 
         # Correct any header errors specific to the districtID
 
         if districtID in district_specific_errors.keys():
-            header_mapper=map_column(colame=df.columns.to_list(), map_dict=district_specific_errors[districtID])
+            header_mapper=map_column(map_dict=district_specific_errors[districtID])
             # Rename columns based on the mapping
             df = df.rename(columns=header_mapper)
             logger.debug(f"Renamed columns for district {districtID} based on specific errors: {header_mapper}")
 
         # Rename all recognised columns to standard names
-        header_mapper=map_column(colname=df.columns.to_list(), map_dict=standard_mapper)
+        header_mapper=map_column(map_dict=standard_mapper)
         df = df.rename(columns=header_mapper)
         logger.debug(f"Renamed columns for district {districtID} to standard names: {header_mapper}")
 
         # Handle specific case for Raichur (546) to separate columns for NS1 and IgM
         if districtID in no_merge_headers.keys():
             if no_merge_headers[districtID] == "merged_ns1_igm_cols":
+                logger.debug(f"{districtID} doesn't require header merging.")
+                logger.debug(f"{districtID} has the following columns: {df.columns.to_list()}")
                 results = df["event.test.test1.result"].to_list()
 
                 # Clean the data: strip spaces, lower case
@@ -248,13 +251,18 @@ def preprocess_ka_linelist_v2(*,
             if "metadata.name" in columns and "metadata.address" in columns:
                 df['metadata.nameAddress'] = df['metadata.name'].fillna("").astype(str) + " " + df['metadata.address'].fillna("").astype(str)  # noqa: E501
                 df = df.drop(columns=["metadata.name", "metadata.address"])
+                logger.debug(f"Combined metadata name and address for district {districtID}")
             elif "metadata.address" in columns:
                 df["metadata.nameAddress"] = df["metadata.address"]
                 df = df.drop(columns=["metadata.address"])
-            else:
+                logger.debug(f"Combined metadata name and address for district {districtID}")
+            elif "metadata.name" in columns:
                 df["metadata.nameAddress"] = df["metadata.name"]
                 df = df.drop(columns(["metadata.name"]))
-            logger.debug(f"Combined metadata name and address for district {districtID}")
+                logger.debug(f"Combined metadata name and address for district {districtID}")
+            else:
+                df["metadata.nameAddress"] = pd.NA
+                logger.info(f"Name, address, and nameAddress unavailable for {districtID}. Set to NA")
 
         # Set default values for specified fields
         for field, value in default_values.items():

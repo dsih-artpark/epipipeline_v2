@@ -4,25 +4,25 @@ import pandas as pd
 
 
 def clean_colname(*, colname: str) -> str:
-    """string clean column names
+    """String clean column names
 
     Args:
-        colname (str): column name
+        colname (str): Column name
 
     Returns:
-        str: clean column name after removing special characters, double spaces and replacing single spaces with _
+        str: Clean column name after removing special characters, double spaces and replacing single spaces with _
     """
 
-    # assert isinstance(colname, str), "Column name must be a string"
-    colname = str(colname)
-    colname = re.sub(r"[^\w\s]", "", colname.strip().lower())
-    colname = re.sub(r"(\s+)", " ", colname)
-    colname = re.sub(r"\s", "_", colname)
+    colname = str(colname).lower()
+    colname = colname.replace("\n", " ")
+    colname = colname.replace("/", " ")
+    colname = re.sub(' +', ' ', colname)
+    colname = colname.strip()
 
     return colname
 
 
-def map_column(*, colname: list, map_dict: dict) -> str:
+def map_column(*, map_dict: dict) -> str:
     """Maps column name to standard column name using mapper provided
 
     Args:
@@ -32,13 +32,13 @@ def map_column(*, colname: list, map_dict: dict) -> str:
     Returns:
         str: Standardised column name
     """
-    assert isinstance(colname, list) and isinstance(
+    assert isinstance(
         map_dict, dict), "Invalid input type for column name or dictionary"
 
     col_mapper = {}
     for standard_name, name_options in map_dict.items():
-        if colname in name_options:
-            col_mapper[colname] = standard_name
+        for option in name_options:
+            col_mapper[option] = standard_name
 
     return col_mapper
 

@@ -10,7 +10,7 @@ logger = logging.getLogger("epipipeline.standardise.dengue.karnataka")
 # Capture warnings and redirect them to the logging system
 logging.captureWarnings(True)
 
-def fix_symptom_date(symptomDate: str, resultDate: str) -> datetime.datetime:
+def fix_symptom_date(*, symptomDate: str, resultDate: str) -> datetime.datetime:
     """If symptom date is in number of days, extracts number and converts to date as result date - number
 
     Args:
@@ -39,7 +39,7 @@ def fix_symptom_date(symptomDate: str, resultDate: str) -> datetime.datetime:
     return (symptomDate, resultDate)
 
 
-def string_clean_dates(date) -> datetime:
+def string_clean_dates(*, date) -> datetime:
     """Nullifies dates with no number, cleans extraneous elements in dates, and converts to datetime format
 
     Args:
@@ -60,7 +60,7 @@ def string_clean_dates(date) -> datetime:
         return pd.NA
 
 
-def fix_year_hist(Date: datetime.datetime, current_year: int) -> datetime.datetime:
+def fix_year_hist(*, Date: datetime.datetime, current_year: int) -> datetime.datetime:
     """Fixes year to current year/next year/previous year where year is not equal to the current year. Use only
         while processing line-lists by year.
 
@@ -99,7 +99,7 @@ def fix_year_hist(Date: datetime.datetime, current_year: int) -> datetime.dateti
     return (Date)
 
 
-def fix_two_dates(earlyDate: datetime.datetime, lateDate: datetime.datetime) -> tuple:
+def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime) -> tuple:
     """Fixes invalid year entries, and attempts to fix logical check on symptom date>=sample date>=result date through date swapping
 
     Args:

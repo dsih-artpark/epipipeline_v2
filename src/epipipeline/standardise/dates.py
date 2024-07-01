@@ -136,7 +136,6 @@ def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, 
 
     # if diff between second and first date is >60 or <0, attempt to fix dates
     if (pd.Timedelta(60, "d") < delta) | (delta < pd.Timedelta(0, "d")):
-
         # if day of second date=month of first date and day is in month-range, try swapping it's day and month
         # e.g. 2023-02-05, 2023-06-02
         if (lateDate.day == earlyDate.month) & (lateDate.day in range(1, 13)):
@@ -166,7 +165,6 @@ def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, 
                 return (newEarlyDate, newLateDate)
             else:
                 pass
-
         # if difference between day of second date and month of first date is 1, try swapping day and month for second date
         # e.g. 2023-08-27, 2023-06-09
         if (lateDate.day-earlyDate.month == 1) & (lateDate.day in range(1, 13)):
@@ -176,7 +174,6 @@ def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, 
                 return (earlyDate, newLateDate)
             else:
                 pass
-
         # if difference between day of first date and month of second date is -1, try swapping day and month for first date
         # e.g., 2023-10-07, 2023-08-09
         if (earlyDate.day-lateDate.month == -1):  # standalone fix to sample date

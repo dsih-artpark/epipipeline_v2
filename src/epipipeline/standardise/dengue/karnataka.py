@@ -1,7 +1,7 @@
 import logging
 import uuid
-
 import pandas as pd
+import datetime
 
 from epipipeline.standardise import (
     active_passive,
@@ -15,7 +15,7 @@ from epipipeline.standardise import (
     standardise_test_result,
     validate_age,
 )
-from epipipeline.standardise.dates import check_date_to_today, fix_symptom_date, fix_two_dates, fix_year_hist, string_clean_dates
+from epipipeline.standardise.dates import check_date_to_today, fix_symptom_date, fix_two_dates, string_clean_dates
 from epipipeline.standardise.gis import subdist_ulb_mapping, village_ward_mapping
 
 # Set up logging
@@ -24,137 +24,177 @@ logger = logging.getLogger("epipipeline.standardise.dengue.karnataka")
 # Capture warnings and redirect them to the logging system
 logging.captureWarnings(True)
 
+
 def standardise_ka_linelist_v3(*,
-                               preprocessed_data_dict, CURRENT_YEAR, THRESHOLDS, STR_VARS,
-                               regionIDs_df, regionIDs_dict, accepted_headers, headers_access, tagDate=None):
+                               preprocessed_data_dict: dict, THRESHOLDS: dict, STR_VARS: list,
+                               regionIDs_df: pd.DataFrame, regionIDs_dict: dict, accepted_headers: list, headers_access: dict, tagDate: datetime.datetime = None) -> pd.DataFrame:
+    """standardises preprocessed line lists for KA Dengue
+
+    Args:
+        preprocessed_data_dict (dict): dictionary of preprocessed datasets, key = dist, value = preprocessed df
+        THRESHOLDS (dict): from metadata.yaml, fuzzymatch thresholds for dist, subdist, village
+        STR_VARS (list): from metadata.yaml, list of string vars to be cleaned
+        regionIDs_df (pd.DataFrame): from aws s3 - regionids database, df of region names and ids
+        regionIDs_dict (dict): from aws s3 - regionids database, dict of parent-child region names and ids
+        accepted_headers (list): list of accepted headers
+        headers_access (dict): from metadata.yaml dictionary with access type for each var in standardised dataset
+        tagDate (datetime.datetime, optional): date of raw data file. Defaults to None.
+
+    Returns:
+        pd.DataFrame: standardised dataset (without pii vars)
+    """
 
     standardise_data_dict = dict()
     for districtID in preprocessed_data_dict.keys():
 
         districtName = regionIDs_dict[districtID]
         df = preprocessed_data_dict[districtID].copy()
-        df["demographics.age"]=df["demographics.age"].apply(lambda x: standardise_age(x))
+        df["demographics.age"] = df["demographics.age"].apply(
+            lambda x: standardise_age(age=x))
 
         # Validate Age - 0 to 105
-        df["demographics.age"]=df["demographics.age"].apply(lambda x: validate_age(x))
+        df["demographics.age"] = df["demographics.age"].apply(
+            lambda x: validate_age(age=x))
 
         # Bin Age
-        df["demographics.ageRange"]=pd.cut(df["demographics.age"].replace(pd.NA,-999), bins=[0, 1, 6, 12, 18, 25, 45, 65, 105], include_lowest=False) # noqa: E501
-        df.loc[df["demographics.age"].isna(), "demographics.ageRange"]=pd.NA
+        df["demographics.ageRange"] = pd.cut(df["demographics.age"].replace(pd.NA, -999), bins=[0, 1, 6, 12, 18, 25, 45, 65, 105], include_lowest=False)  # noqa: E501
+        df.loc[df["demographics.age"].isna(), "demographics.ageRange"] = pd.NA
 
-        # Standardise Gender - MALE, FEMALE, UNKNOWN
-        df["demographics.gender"]=df["demographics.gender"].apply(lambda x: standardise_gender(x))
+        # Standardise Gender - Male, Female, Unknown
+        df["demographics.gender"] = df["demographics.gender"].apply(
+            lambda x: standardise_gender(gender=x))
 
-        ### Standardise Result variables - POSITIVE, NEGATIVE, UNKNOWN
-        df["event.test.test1.result"]=df["event.test.test1.result"].apply(lambda x: standardise_test_result(x))
-        df["event.test.test2.result"]=df["event.test.test2.result"].apply(lambda x: standardise_test_result(x))
+        # Standardise Result variables - Positive, Negative, Unknown
+        df["event.test.test1.result"] = df["event.test.test1.result"].apply(
+            lambda x: standardise_test_result(result=x))
+        df["event.test.test2.result"] = df["event.test.test2.result"].apply(
+            lambda x: standardise_test_result(result=x))
 
-        ## Generate test count - [0,1,2]
-        df["event.test.numberOfTests"]=df.apply(lambda x: generate_test_count(x["event.test.test1.result"], x["event.test.test2.result"]), axis=1) # noqa: E501
+        # Generate test count - [0,1,2]
+        df["event.test.numberOfTests"] = df.apply(lambda x: generate_test_count(test1=x["event.test.test1.result"], test2=x["event.test.test2.result"]), axis=1)  # noqa: E501
 
         # Standardise case variables
-        ## OPD, IPD
+        # OPD, IPD
         if "case.opdOrIpd" not in df.columns.to_list():
-            logger.info(f"District {districtName} ({districtID}) does not have OPD-IPD info")
+            logger.info(f"District {districtName} ({
+                        districtID}) does not have OPD-IPD info")
             df["case.opdOrIpd"] = pd.NA
         else:
-            df["case.opdOrIpd"]=df["case.opdOrIpd"].apply(lambda x: opd_ipd(x))
+            df["case.opdOrIpd"] = df["case.opdOrIpd"].apply(
+                lambda x: opd_ipd(s=x))
 
-        ## PUBLIC, PRIVATE
+        # Public, Private
         if "case.publicOrPrivate" not in df.columns.to_list():
-            logger.info(f"District {districtName} ({districtID}) does not have Public-Private info")
+            logger.info(f"District {districtName} ({
+                        districtID}) does not have Public-Private info")
             df["case.publicOrPrivate"] = pd.NA
         else:
-            df["case.publicOrPrivate"]=df["case.publicOrPrivate"].apply(lambda x: public_private(x))
+            df["case.publicOrPrivate"] = df["case.publicOrPrivate"].apply(
+                lambda x: public_private(s=x))
 
-        ## ACTIVE, PASSIVE
+        # Active, Passive
         if "case.surveillance" not in df.columns.to_list():
-            logger.info(f"District {districtName} ({districtID}) does not have Active-Passive Surveillance info")
+            logger.info(f"District {districtName} ({
+                        districtID}) does not have Active-Passive Surveillance info")
             df["case.surveillance"] = pd.NA
         else:
-            df["case.surveillance"]=df["case.surveillance"].apply(lambda x: active_passive(x))
+            df["case.surveillance"] = df["case.surveillance"].apply(
+                lambda x: active_passive(s=x))
 
-        # URBAN, RURAL
+        # Urban, Rural
         if "case.urbanOrRural" not in df.columns.to_list():
-            logger.info(f"District {districtName} ({districtID}) does not have Urban vs Rural info")
+            logger.info(f"District {districtName} ({
+                        districtID}) does not have Urban vs Rural info")
             df["case.urbanOrRural"] = pd.NA
         else:
-            df["case.urbanOrRural"]=df["case.urbanOrRural"].apply(lambda x: rural_urban(x))
+            df["case.urbanOrRural"] = df["case.urbanOrRural"].apply(
+                lambda x: rural_urban(s=x))
 
         # Fix date variables
-        datevars=["event.symptomOnsetDate", "event.test.sampleCollectionDate","event.test.resultDate"]
+        datevars = ["event.symptomOnsetDate",
+                    "event.test.sampleCollectionDate", "event.test.resultDate"]
 
         # Fix symptom date where number of days is entered instead of date
-        new_dates=df.apply(lambda x: fix_symptom_date(x["event.symptomOnsetDate"], x["event.test.resultDate"]), axis=1)
-        df["event.symptomOnsetDate"], df["event.test.resultDate"] = zip(*new_dates)
+        new_dates = df.apply(lambda x: fix_symptom_date(
+            symptomDate=x["event.symptomOnsetDate"], resultDate=x["event.test.resultDate"]), axis=1)
+        df["event.symptomOnsetDate"], df["event.test.resultDate"] = zip(
+            *new_dates)
 
         # Then, string clean dates and fix year errors to current/previous (if dec)/next (if jan)
         for var in datevars:
-            df[var]=df[var].apply(lambda x: string_clean_dates(x))
-            df[var]=df[var].apply(lambda x: check_date_to_today(date=x))
-            df[var]=df[var].apply(lambda x: fix_year_hist(x,CURRENT_YEAR))
+            df[var] = df[var].apply(lambda x: string_clean_dates(date=x))
+            df[var] = df[var].apply(lambda x: check_date_to_today(date=x))
 
         # Then, carry out year and date logical checks and fixes on symptom and sample date first
-        result=df.apply(lambda x: fix_two_dates(x["event.symptomOnsetDate"], x["event.test.sampleCollectionDate"]), axis=1)
-        df["event.symptomOnsetDate"], df["event.test.sampleCollectionDate"] = zip(*result)
+        result = df.apply(lambda x: fix_two_dates(
+            earlyDate=x["event.symptomOnsetDate"], lateDate=x["event.test.sampleCollectionDate"]), axis=1)
+        df["event.symptomOnsetDate"], df["event.test.sampleCollectionDate"] = zip(
+            *result)
 
         # Then, carry out year and date logical checks and fixes on symptom and sample date first
-        result=df.apply(lambda x: fix_two_dates(x["event.test.sampleCollectionDate"], x["event.test.resultDate"]), axis=1)
-        df["event.test.sampleCollectionDate"], df["event.test.resultDate"] = zip(*result)
+        result = df.apply(lambda x: fix_two_dates(
+            earlyDate=x["event.test.sampleCollectionDate"], lateDate=x["event.test.resultDate"]), axis=1)
+        df["event.test.sampleCollectionDate"], df["event.test.resultDate"] = zip(
+            *result)
 
         # One last time on symptom and sample date..for convergence..miracles do happen!
-        result=df.apply(lambda x: fix_two_dates(x["event.symptomOnsetDate"], x["event.test.sampleCollectionDate"]), axis=1)
-        df["event.symptomOnsetDate"], df["event.test.sampleCollectionDate"] = zip(*result)
+        result = df.apply(lambda x: fix_two_dates(
+            earlyDate=x["event.symptomOnsetDate"], lateDate=x["event.test.sampleCollectionDate"]), axis=1)
+        df["event.symptomOnsetDate"], df["event.test.sampleCollectionDate"] = zip(
+            *result)
 
-        # format dates to ISO format
+        # Format dates to ISO format
         for var in datevars:
-            df[var]=pd.to_datetime(df[var]).dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+            df[var] = pd.to_datetime(df[var]).dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
         # Setting primary date - symptom date > sample date > result date
-        df["metadata.primaryDate"]=df["event.symptomOnsetDate"].fillna(df["event.test.sampleCollectionDate"]).fillna(df["event.test.resultDate"])
+        df["metadata.primaryDate"] = df["event.symptomOnsetDate"].fillna(
+            df["event.test.sampleCollectionDate"]).fillna(df["event.test.resultDate"])
 
         # Clean string vars
         for var in STR_VARS:
             if var in df.columns:
-                df[var]=df[var].astype(str)
-                df[var]=df[var].apply(lambda x: clean_strings(x))
+                df[var] = df[var].astype(str)
+                df[var] = df[var].apply(lambda x: clean_strings(s=x))
 
         # Geo-mapping
-        ## Note: can be optimised to improve geo-mapping
-        # Move BBMP from district to subdistrict/ulb field
+        # If BBMP data is shared, move BBMP tag from district to subdistrict/ulb column
         # df.loc[df["location.admin2.name"]=="Bbmp", "location.admin3.name"]="BBMP"
 
-        assert len(df[df["location.admin2.ID"]=="admin_0"])==0, "District(s) missing"
+        assert len(df[df["location.admin2.ID"] == "admin_0"]
+                   ) == 0, "District(s) missing"
 
         # Map subdistrict/ulb name to standardised LGD name and code
-        subdist=df.apply(lambda x: subdist_ulb_mapping(x["location.admin2.ID"], x["location.admin3.name"], regionIDs_df,
-        THRESHOLDS["subdistrict"]), axis=1)
-        df["location.admin3.name"], df["location.admin3.ID"]=zip(*subdist)
+        subdist = df.apply(lambda x: subdist_ulb_mapping(districtID=x["location.admin2.ID"], subdistName=x["location.admin3.name"], df=regionIDs_df,
+                                                         threshold=THRESHOLDS["subdistrict"]), axis=1)
+        df["location.admin3.name"], df["location.admin3.ID"] = zip(*subdist)
 
         # Map village/ward name to standardised LGD name and code
-        villages=df.apply(lambda x: village_ward_mapping(x["location.admin3.ID"], x["location.admin5.name"],
-                            regionIDs_df, THRESHOLDS["village"] ), axis=1)
-        df["location.admin5.name"], df["location.admin5.ID"]=zip(*villages)
+        villages = df.apply(lambda x: village_ward_mapping(subdistID=x["location.admin3.ID"], villageName=x["location.admin5.name"],
+                                                           df=regionIDs_df, threshold=THRESHOLDS["village"]), axis=1)
+        df["location.admin5.name"], df["location.admin5.ID"] = zip(*villages)
 
         # Extract admin hierarchy from admin3.ID - ULB, REVENUE, admin_0 (if missing ulb/subdistrict LGD code)
-        df["location.admin.hierarchy"]=df["location.admin3.ID"].apply(lambda x: "ULB" if x.startswith("ulb") else ("Revenue" if x.startswith("subdistrict") else "admin_0"))  # noqa: E501
+        df["location.admin.hierarchy"] = df["location.admin3.ID"].apply(lambda x: "ULB" if x.startswith("ulb") else ("Revenue" if x.startswith("subdistrict") else "admin_0"))  # noqa: E501
 
         # Drop duplicates across all vars after standardisation
         df.drop_duplicates(inplace=True)
 
         # Generate recordID after standardisation and de-duplication
-        df["metadata.recordID"]=[uuid.uuid4() for i in range(len(df))]
+        df["metadata.recordID"] = [uuid.uuid4() for i in range(len(df))]
 
-        headers = [head for head in df.columns.to_list() if head in accepted_headers]
+        headers = [head for head in df.columns.to_list()
+                   if head in accepted_headers]
         headers = sorted(headers, key=accepted_headers.index)
 
         df = df[headers]
-        df = df.dropna(subset = ["metadata.nameAddress","metadata.primaryDate","demographics.age","demographics.gender"], thresh=2)
+        df = df.dropna(subset=["metadata.nameAddress", "metadata.primaryDate",
+                       "demographics.age", "demographics.gender"], thresh=2)
 
-         # removing PII vars - check that accepted_headers is pulling in data_dictionary in metadata.yaml
+        # removing PII vars - check that accepted_headers is pulling in data_dictionary in metadata.yaml
         for header in headers:
             if not headers_access[header]:
-                df=df.drop(columns=header)
+                df = df.drop(columns=header)
 
         standardise_data_dict[districtID] = df
 

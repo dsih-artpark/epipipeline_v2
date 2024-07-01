@@ -191,11 +191,11 @@ def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, 
     return (earlyDate, lateDate)
 
 
-def check_date_to_today(*, date: datetime.datetime, tagDate: datetime.datetime=None) -> datetime:
+def check_date_to_today(*, Date: datetime.datetime, tagDate: datetime.datetime=None) -> datetime:
     """Nullifies dates that are greater than current date
 
     Args:
-        date (datetime): Date variable (symptom date, sample date or result date)
+        Date (datetime): Date variable (symptom date, sample date or result date)
         tagDate (datetime): Date of file. Defaults to None and uses current date if not specified.
 
     Returns:
@@ -205,11 +205,11 @@ def check_date_to_today(*, date: datetime.datetime, tagDate: datetime.datetime=N
     if tagDate is None:
         tagDate = datetime.datetime.today()
 
-    if pd.isna(date):
-        return pd.NA
-    elif date > tagDate:
+    if pd.isna(Date):
+        return Date
+    elif Date > tagDate:
         logger.warning(f"Found a date greater than today in {
                        districtName} ({districtID}). Removing...")
         return pd.NaT
     else:
-        return date
+        return Date

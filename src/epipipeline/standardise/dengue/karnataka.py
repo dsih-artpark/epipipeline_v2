@@ -142,7 +142,7 @@ def standardise_ka_linelist_v3(*,
         df["event.symptomOnsetDate"], df["event.test.sampleCollectionDate"] = zip(
             *result)
 
-        # Format dates to ISO format
+        # Coerce dates to <= current date, and format dates to ISO format
         for var in datevars:
             df[var] = df.apply(lambda x: check_date_to_today(
                 Date=x[var], districtName=x["location.admin2.name"], districtID=x["location.admin2.ID"]), axis=1)

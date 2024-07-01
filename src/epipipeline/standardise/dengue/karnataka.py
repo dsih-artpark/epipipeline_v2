@@ -123,7 +123,6 @@ def standardise_ka_linelist_v3(*,
         # Then, string clean dates and fix year errors to current/previous (if dec)/next (if jan)
         for var in datevars:
             df[var] = df[var].apply(lambda x: string_clean_dates(Date=x))
-            df[var] = df[var].apply(lambda x: check_date_to_today(Date=x))
 
         # Then, carry out year and date logical checks and fixes on symptom and sample date first
         result = df.apply(lambda x: fix_two_dates(
@@ -145,6 +144,8 @@ def standardise_ka_linelist_v3(*,
 
         # Format dates to ISO format
         for var in datevars:
+            df[var] = df.apply(lambda x: check_date_to_today(
+                Date=x[var], districtName=x["location.admin2.name"], districtID=x["location.admin2.ID"]), axis=1)
             df[var] = pd.to_datetime(df[var]).dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
         # Setting primary date - symptom date > sample date > result date

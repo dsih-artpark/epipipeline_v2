@@ -13,7 +13,7 @@ from typing import Union
 
 
 # Set up logging
-logger = logging.getLogger("standardise.geocode")
+logger = logging.getLogger("epipipeline.standardise.geocode")
 logging.basicConfig(level=logging.INFO)
 logging.captureWarnings(True)
 

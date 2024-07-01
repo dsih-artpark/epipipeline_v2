@@ -27,7 +27,7 @@ logging.captureWarnings(True)
 
 def standardise_ka_linelist_v3(*,
                                preprocessed_data_dict: dict, THRESHOLDS: dict, STR_VARS: list,
-                               regionIDs_df: pd.DataFrame, regionIDs_dict: dict, accepted_headers: list, headers_access: dict, tagDate: datetime.datetime = None) -> pd.DataFrame:
+                               regionIDs_df: pd.DataFrame, regionIDs_dict: dict, data_dictionary: dict, tagDate: datetime.datetime = None) -> pd.DataFrame:
     """standardises preprocessed line lists for KA Dengue
 
     Args:
@@ -36,8 +36,7 @@ def standardise_ka_linelist_v3(*,
         STR_VARS (list): from metadata.yaml, list of string vars to be cleaned
         regionIDs_df (pd.DataFrame): from aws s3 - regionids database, df of region names and ids
         regionIDs_dict (dict): from aws s3 - regionids database, dict of parent-child region names and ids
-        accepted_headers (list): list of accepted headers
-        headers_access (dict): from metadata.yaml dictionary with access type for each var in standardised dataset
+        data_dictionary (dict): from metadata.yaml
         tagDate (datetime.datetime, optional): date of raw data file. Defaults to None.
 
     Returns:
@@ -184,18 +183,16 @@ def standardise_ka_linelist_v3(*,
         # Generate recordID after standardisation and de-duplication
         df["metadata.recordID"] = [uuid.uuid4() for i in range(len(df))]
 
-        headers = [head for head in df.columns.to_list()
-                   if head in accepted_headers]
-        headers = sorted(headers, key=accepted_headers.index)
-
-        df = df[headers]
+        # Drop empty rows for key vars
         df = df.dropna(subset=["metadata.nameAddress", "metadata.primaryDate",
                        "demographics.age", "demographics.gender"], thresh=2)
 
-        # removing PII vars - check that accepted_headers is pulling in data_dictionary in metadata.yaml
-        for header in headers:
-            if not headers_access[header]:
-                df = df.drop(columns=header)
+        # Sort headers after removing PII vars
+
+        headers = [col for col in df.columns.to_list(
+        ) if data_dictionary[col]["access"]]
+
+        df = df[headers]
 
         standardise_data_dict[districtID] = df
 

@@ -13,11 +13,12 @@ def clean_colname(*, colname: str) -> str:
         str: Clean column name after removing special characters, double spaces and replacing single spaces with _
     """
 
-    colname = str(colname).lower()
+    colname = str(colname).strip().lower()
     colname = colname.replace("\n", " ")
     colname = colname.replace("/", " ")
-    colname = re.sub(' +', ' ', colname)
-    colname = colname.strip()
+    colname = re.sub(r'[^A-Za-z0-9]', '', colname)
+    colname = re.sub(r'\s+', ' ', colname)
+    colname = re.sub(r'\s', '_', colname)
 
     return colname
 
@@ -41,6 +42,7 @@ def map_column(*, map_dict: dict) -> str:
             col_mapper[option] = standard_name
 
     return col_mapper
+
 
 def extract_test_method_with_result(*, test_method: str, result: str) -> tuple:
     """Creates separate NS1 and IgM columns with corresponding result if test_method and result variables provided
@@ -86,4 +88,3 @@ def extract_test_method_without_result(*, test_method: str) -> tuple:
         if re.search(r"IgM", str(test_method), re.IGNORECASE):
             test2 = "Positive"
         return (test1, test2)
-

@@ -23,15 +23,15 @@ def clean_colname(*, colname: str) -> str:
     return colname
 
 
-def map_column(*, map_dict: dict) -> str:
-    """Maps column name to standard column name using mapper provided
+def map_column(*, map_dict: dict) -> dict:
+    """Reverses the key-value item pair in a dictionary containing preprocessed headers and their corrresponding
+        standardised headers.
 
     Args:
-        colname (str): Current column in DataFrame
-        map (dict): Dictionary mapping of preprocessed col names to standardised col names
+        map (dict): Dictionary with key = standardised col name, value = preprocessed col names
 
     Returns:
-        str: Standardised column name
+        dict: Dictionary with key = preprocessed col name, value = standardised col name
     """
     assert isinstance(
         map_dict, dict), "Invalid input type for column name or dictionary"

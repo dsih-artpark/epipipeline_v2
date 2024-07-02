@@ -258,7 +258,7 @@ def preprocess_ka_linelist_v2(*,
                 logger.debug(f"Combined metadata name and address for district {districtID}")
             elif "metadata.name" in columns:
                 df["metadata.nameAddress"] = df["metadata.name"]
-                df = df.drop(columns(["metadata.name"]))
+                df = df.drop(columns = (["metadata.name"]))
                 logger.debug(f"Combined metadata name and address for district {districtID}")
             else:
                 df["metadata.nameAddress"] = pd.NA

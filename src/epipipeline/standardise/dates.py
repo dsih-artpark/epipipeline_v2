@@ -63,23 +63,26 @@ def string_clean_dates(*, Date) -> datetime:
         return pd.NA
 
 
-def fix_year_hist(*, Date: datetime.datetime, current_year: int) -> datetime.datetime:
+def fix_year_hist(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = None) -> datetime.datetime:
     """Fixes year to current year/next year/previous year where year is not equal to the current year. Use only
         while processing line-lists by year.
 
     Args:
         Date (datetime.datetime): date variable in datetime format
-        current_year (int): year if the file
+        tagDate (datetime.datetime), optional:  current/file date
 
     Returns:
         tuple: clean date with year = current/next/previous
     """
 
     if pd.isna(Date):
-        return pd.NA
-
-    assert isinstance(Date, datetime.datetime) and isinstance(
-        current_year, int), "Input date and int year"
+        return pd.NaT
+    
+    if tagDate:
+        tagDate = pd.to_datetime(tagDate)
+        current_year = tagDate.year
+    else:
+        current_year = datetime.datetime.today().year
 
     # if first date is not null, and year is not current year
     if Date.year != current_year:
@@ -113,7 +116,7 @@ def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, 
     Args:
         earlyDate (datetime): First date in sequence (symptom date or sample date)
         lateDate (datetime): Second date in sequence (sample date or result date)
-        tagDate (datetime): Only swap if date < current date
+        tagDate (datetime), optional: Only swap if date < current date
 
     Returns:
         tuple: If logical errors can be fixed, returns updated date(s). Else, returns original dates.
@@ -198,20 +201,23 @@ def check_date_to_today(*, Date: datetime.datetime, tagDate: Optional[datetime.d
 
     Args:
         Date (datetime): Date variable (symptom date, sample date or result date)
-        tagDate (datetime): Date of file. Defaults to None and uses current date if not specified.
-        districtName: District Name to print for logger
-        districtID: District ID to print for logger
+        tagDate (datetime), optional: Date of file. Defaults to None and uses current date if not specified.
+        districtName, optional: District Name to print for logger
+        districtID, optional: District ID to print for logger
 
     Returns:
         datetime: pd.NaT if date is > current date or file date, else returns original date
     """
 
-    if tagDate is None:
+    if pd.isna(Date):
+        return pd.NaT
+    
+    if tagDate:
+        tagDate=pd.to_datetime(tagDate)
+    else:
         tagDate = datetime.datetime.today()
 
-    if pd.isna(Date):
-        return Date
-    elif Date > tagDate:
+    if Date > tagDate:
         if districtName and districtID:
             logger.warning(f"Found a date greater than today in {districtName} ({districtID}). Removing...")
         return pd.NaT

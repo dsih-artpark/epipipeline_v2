@@ -13,7 +13,7 @@ from shapely.geometry import Point
 from tqdm import tqdm
 
 # Set up logging
-logger = logging.getLogger("standardise.geocode")
+logger = logging.getLogger("epipipeline.standardise.geocode")
 logging.basicConfig(level=logging.INFO)
 logging.captureWarnings(True)
 
@@ -51,7 +51,7 @@ def dist_mapping(*, stateID: str, districtName: str, df: pd.DataFrame, threshold
     return (districtName, districtCode)  # returns original name if unmatched
 
 
-def subdist_ulb_mapping(districtID: str, subdistName: str, df: pd.DataFrame, threshold: int = 65) -> tuple:
+def subdist_ulb_mapping(*, districtID: str, subdistName: str, df: pd.DataFrame, threshold: int = 65) -> tuple:
     """Standardises subdistrict/ulb names and codes (based on LGD), provided the standardised district ID
 
     Args:
@@ -84,7 +84,7 @@ def subdist_ulb_mapping(districtID: str, subdistName: str, df: pd.DataFrame, thr
         return (subdistName, "admin_0")  # returns original name if unmatched
 
 
-def village_ward_mapping(subdistID: str, villageName: str, df: pd.DataFrame, threshold: int = 95) -> tuple:
+def village_ward_mapping(*, subdistID: str, villageName: str, df: pd.DataFrame, threshold: int = 95) -> tuple:
     """Standardises village names and codes (based on LGD), provided the standardised district ID
 
     Args:
@@ -110,7 +110,7 @@ def village_ward_mapping(subdistID: str, villageName: str, df: pd.DataFrame, thr
     else:
         return (villageName, "admin_0")  # returns original name if unmatched
 
-# Get API key if stored in a local config file
+
 def get_api_key(*, encrypted_file_path: str = "~/config.enc"):
     """Retrieves API Key stored in an openssl pbkdf2 encrypted file"
 
@@ -130,8 +130,6 @@ def get_api_key(*, encrypted_file_path: str = "~/config.enc"):
         logger.error(f"Error getting API Key: {e}")
         raise
     return MyAPI
-
-# Geocoding function
 
 
 def geocode(*, addresses: Union[pd.Series, str], batch_size: int = 0, API_key: str):
@@ -224,7 +222,7 @@ def geocode(*, addresses: Union[pd.Series, str], batch_size: int = 0, API_key: s
             return all_geocoded_results
 
 
-def check_bounds(lat: Union[float, pd.Series], long: Union[float, pd.Series], regionID: str, geojson_dir: str = "data/GS0012DS0051-Shapefiles_India/geojsons/individual/"):  # noqa: E501
+def check_bounds(*, lat: Union[float, pd.Series], long: Union[float, pd.Series], regionID: str, geojson_dir: str = "data/GS0012DS0051-Shapefiles_India/geojsons/individual/"):  # noqa: E501
     """
     Returns lat, long positions if within a polygon, else returns Null
 

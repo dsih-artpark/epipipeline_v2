@@ -3,7 +3,7 @@ import re
 import pandas as pd
 
 
-def clean_strings(s:str)->str:
+def clean_strings(*, s:str)->str:
     """Standardises string entries
 
     Args:
@@ -22,7 +22,7 @@ def clean_strings(s:str)->str:
     return pd.NA
 
 
-def standardise_age(age:str) -> float:
+def standardise_age(*, age:str) -> float:
     """Extracts year and month from string age entries
 
     Args:
@@ -66,7 +66,7 @@ def standardise_age(age:str) -> float:
     else:
         return pd.NA
 
-def validate_age(age: float, upper_limit: float =105) -> float:
+def validate_age(*, age: float, upper_limit: float =105) -> float:
     """Validates age range
 
     Args:
@@ -87,7 +87,7 @@ def validate_age(age: float, upper_limit: float =105) -> float:
         return age
 
 
-def standardise_gender(gender:str)->str:
+def standardise_gender(*, gender:str)->str:
     """Standardises gender
 
     Args:
@@ -107,7 +107,7 @@ def standardise_gender(gender:str)->str:
         return "Unknown"
 
 
-def standardise_test_result(result:str) -> str:
+def standardise_test_result(*, result:str) -> str:
     """Standardises results to positive or negative
 
     Args:
@@ -124,7 +124,7 @@ def standardise_test_result(result:str) -> str:
     return "Unknown"
 
 
-def generate_test_count(test1:str, test2:str)->int:
+def generate_test_count(*, test1:str, test2:str)->int:
     """Generates test count from test result variables
 
     Args:
@@ -143,7 +143,7 @@ def generate_test_count(test1:str, test2:str)->int:
         return 0
 
 
-def opd_ipd(s:str) -> str:
+def opd_ipd(*, s:str) -> str:
     """Standardises entries for IPD or OPD
 
     Args:
@@ -161,7 +161,7 @@ def opd_ipd(s:str) -> str:
         else:
             return pd.NA
 
-def public_private(s:str) -> str:
+def public_private(*, s:str) -> str:
     """Standardises entries for private or public
 
     Args:
@@ -180,7 +180,7 @@ def public_private(s:str) -> str:
             return pd.NA
 
 
-def active_passive(s:str) -> str:
+def active_passive(*, s:str) -> str:
     """Standardises entries for active or passive
 
     Args:
@@ -199,7 +199,7 @@ def active_passive(s:str) -> str:
             return pd.NA
 
 
-def rural_urban(s:str) -> str:
+def rural_urban(*, s:str) -> str:
     """Standardises entries for rural or urban
 
     Args:

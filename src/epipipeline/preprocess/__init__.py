@@ -1,5 +1,4 @@
 import re
-
 import pandas as pd
 
 
@@ -13,24 +12,25 @@ def clean_colname(*, colname: str) -> str:
         str: Clean column name after removing special characters, double spaces and replacing single spaces with _
     """
 
-    colname = str(colname).lower()
+    colname = str(colname).strip().lower()
     colname = colname.replace("\n", " ")
     colname = colname.replace("/", " ")
-    colname = re.sub(' +', ' ', colname)
-    colname = colname.strip()
+    colname = re.sub(r'[^A-Za-z0-9]', '', colname)
+    colname = re.sub(r' {2,}', ' ', colname)
+    colname = re.sub(r' ', '_', colname)
 
     return colname
 
 
-def map_column(*, map_dict: dict) -> str:
-    """Maps column name to standard column name using mapper provided
+def map_column(*, map_dict: dict) -> dict:
+    """Reverses the key-value item pair in a dictionary containing preprocessed headers and their corrresponding
+        standardised headers.
 
     Args:
-        colname (str): Current column in DataFrame
-        map (dict): Dictionary mapping of preprocessed col names to standardised col names
+        map (dict): Dictionary with key = standardised col name, value = preprocessed col names
 
     Returns:
-        str: Standardised column name
+        dict: Dictionary with key = preprocessed col name, value = standardised col name
     """
     assert isinstance(
         map_dict, dict), "Invalid input type for column name or dictionary"
@@ -41,6 +41,7 @@ def map_column(*, map_dict: dict) -> str:
             col_mapper[option] = standard_name
 
     return col_mapper
+
 
 def extract_test_method_with_result(*, test_method: str, result: str) -> tuple:
     """Creates separate NS1 and IgM columns with corresponding result if test_method and result variables provided
@@ -86,4 +87,3 @@ def extract_test_method_without_result(*, test_method: str) -> tuple:
         if re.search(r"IgM", str(test_method), re.IGNORECASE):
             test2 = "Positive"
         return (test1, test2)
-

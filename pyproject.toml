@@ -19,6 +19,7 @@ dataio = {git = "https://github.com/dsih-artpark/dataio.git"}
 googlemaps = "^4.10.0"
 tqdm = "^4.66.4"
 geopandas = "^1.0.0"
+urllib3 = "<2"
 
 
 [build-system]

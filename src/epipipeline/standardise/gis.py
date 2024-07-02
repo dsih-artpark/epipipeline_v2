@@ -1,16 +1,16 @@
-import re
-import pandas as pd
-from fuzzywuzzy import process
-import googlemaps
 import logging
-import time
-from tqdm import tqdm
-import subprocess
-import geopandas as gpd
-from shapely.geometry import Point
 import os
+import re
+import subprocess
+import time
 from typing import Union
 
+import geopandas as gpd
+import googlemaps
+import pandas as pd
+from fuzzywuzzy import process
+from shapely.geometry import Point
+from tqdm import tqdm
 
 # Set up logging
 logger = logging.getLogger("standardise.geocode")
@@ -39,7 +39,7 @@ def dist_mapping(*, stateID: str, districtName: str, df: pd.DataFrame, threshold
     districtName = re.sub(r"\(?\sU\)?$", " Urban", districtName, flags=re.IGNORECASE)
     districtName = re.sub(r"\(?\sR\)?$", " Rural", districtName, flags=re.IGNORECASE)
     districtName = re.sub(r"Bijapur", "Vijayapura", districtName, flags=re.IGNORECASE)
-    districtName = re.sub('\b(B[ae]ngal[ou]r[ue](?!\s*Rural)|Bbmp)\b', "Bengaluru Urban", districtName, flags=re.IGNORECASE)
+    districtName = re.sub(r'\b(B[ae]ngal[ou]r[ue](?!\s*Rural)|Bbmp)\b', "Bengaluru Urban", districtName, flags=re.IGNORECASE)
 
     districts = df[df["parentID"] == stateID]["regionName"].to_list()
     match = process.extractOne(districtName, districts, score_cutoff=threshold)
@@ -153,7 +153,7 @@ def geocode(*, addresses: Union[pd.Series, str], batch_size: int = 0, API_key: s
         single_address = False
     else:
         raise ValueError("addresses must be either a pandas Series or a string")
-        
+
     assert isinstance(API_key, str) and len(API_key) >= 35, "Invalid API key length"
     assert isinstance(batch_size, int) and batch_size >= 0, "Batch size must an integer >=0"
 
@@ -224,7 +224,7 @@ def geocode(*, addresses: Union[pd.Series, str], batch_size: int = 0, API_key: s
             return all_geocoded_results
 
 
-def check_bounds(lat: Union[float, pd.Series], long: Union[float, pd.Series], regionID: str, geojson_dir: str = "data/GS0012DS0051-Shapefiles_India/geojsons/individual/"):
+def check_bounds(lat: Union[float, pd.Series], long: Union[float, pd.Series], regionID: str, geojson_dir: str = "data/GS0012DS0051-Shapefiles_India/geojsons/individual/"):  # noqa: E501
     """
     Returns lat, long positions if within a polygon, else returns Null
 
@@ -252,7 +252,7 @@ def check_bounds(lat: Union[float, pd.Series], long: Union[float, pd.Series], re
             "Latitude and Longitude must be floats or pandas Series")
 
     # Check validity of regionID
-    if not re.match(r'^(state|district|subdistrict|ulb|village)_\d{2,6}$', regionID) and not re.match(r'^(zone|ward)_\d{2,6}-\d{1,6}$', regionID):
+    if not re.match(r'^(state|district|subdistrict|ulb|village)_\d{2,6}$', regionID) and not re.match(r'^(zone|ward)_\d{2,6}-\d{1,6}$', regionID):  # noqa: E501
         raise ValueError(f"Invalid regionID: {regionID}")
 
     # Construct file path
@@ -262,7 +262,7 @@ def check_bounds(lat: Union[float, pd.Series], long: Union[float, pd.Series], re
     try:
         polygon = gpd.read_file(geojson_path)
     except Exception as e:
-        raise IOError(f"Failed to open geojson file: {e}")
+        raise IOError(f"Failed to open geojson file: {e}") from e
 
     # Create a series of points
     points = [Point(lon, lat) if not pd.isna(lat) and not pd.isna(

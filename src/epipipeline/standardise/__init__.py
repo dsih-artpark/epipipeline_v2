@@ -21,7 +21,7 @@ def clean_strings(*, s:str)->str:
     s = re.sub(r' {2,}', ' ', s)
     s = s.strip().title()
 
-    if s == '' or s == ' ':
+    if s == '' or s == ' ' or s == 'Nan':
         return pd.NA
     else:
         return s

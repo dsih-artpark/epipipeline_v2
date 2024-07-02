@@ -29,13 +29,13 @@ def fix_symptom_date(*, symptomDate: str, resultDate: str) -> datetime.datetime:
                     symptomDate = resultDate - \
                         pd.to_timedelta(int(match.group(1)), unit='d')
                 except ValueError:
-                    return (pd.NA, pd.NA)
+                    return (pd.NaT, pd.NaT)
             else:
                 try:
                     resultDate = pd.to_datetime(resultDate)
-                    return (pd.NA, resultDate)
+                    return (pd.NaT, resultDate)
                 except ValueError:
-                    return (pd.NA, pd.NA)
+                    return (pd.NaT, pd.NaT)
         else:
             return (symptomDate, resultDate)
 
@@ -53,14 +53,14 @@ def string_clean_dates(*, Date) -> datetime:
     """
 
     if not re.search(r"\d", str(Date)):
-        return pd.NA
+        return pd.NaT
     else:
         Date = re.sub(r"\-\-", "-", str(Date))
     try:
         Date = pd.to_datetime(Date, format="mixed")
         return Date
     except ValueError:
-        return pd.NA
+        return pd.NaT
 
 
 def fix_year(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = None) -> datetime.datetime:

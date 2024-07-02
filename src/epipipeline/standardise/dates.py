@@ -63,13 +63,12 @@ def string_clean_dates(*, Date) -> datetime:
         return pd.NA
 
 
-def fix_year_hist(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = None) -> datetime.datetime:
-    """Fixes year to current year/next year/previous year where year is not equal to the current year. Use only
-        while processing line-lists by year.
+def fix_year(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = None) -> datetime.datetime:
+    """Fixes year to current year/previous year where year is not equal to the current year. 
 
     Args:
         Date (datetime.datetime): date variable in datetime format
-        tagDate (datetime.datetime), optional:  current/file date
+        tagDate (datetime.datetime), optional:  max date of cases - set to current date by default
 
     Returns:
         tuple: clean date with year = current/next/previous
@@ -86,26 +85,21 @@ def fix_year_hist(*, Date: datetime.datetime, tagDate: Optional[datetime.datetim
 
     # if first date is not null, and year is not current year
     if Date.year != current_year:
-        # set year to current year if month is not Jan or Dec
-        if Date.month != 1 and Date.month != 12:
-            Date = datetime.datetime(
-                day=Date.day, month=Date.month, year=current_year)
-        else:
-            # if month is Jan or Dec, calculate the diff b/w the year and current year
-            year_diff = (Date.year - current_year)
-            # if diff greater than 1 - i.e., not from previous or next year, set year to current year
-            if abs(year_diff) > 1:
-                Date = datetime.datetime(
-                    day=Date.day, month=Date.month, year=current_year)
-            # if date is from previous or next year -
-            # if month is dec, set to previous year
-            elif Date.month == 12:
-                Date = datetime.datetime(
-                    day=Date.day, month=Date.month, year=current_year - 1)
-            # else (month is jan), set to next year
+        # set year to current year if month is not Dec
+        if Date.month != 12:
+            Date = datetime.datetime(day=Date.day, month=Date.month, year=current_year)
+        else: # december entries can be current/previous year
+            # year can be previous year
+            year_diff = (current_year - Date.year)
+            # if post-dated, set to current year
+            if year_diff < 0:
+                Date = datetime.datetime(day=Date.day, month=Date.month, year=current_year)
+            # if year is beyond 1 year prior, set to current year
+            elif year_diff >1:
+                Date = datetime.datetime(day=Date.day, month=Date.month, year=current_year)
+            # remaining dates are from dec of previous year, so we retain them
             else:
-                Date = datetime.datetime(
-                    day=Date.day, month=Date.month, year=current_year + 1)
+                pass
 
     return (Date)
 

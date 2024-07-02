@@ -12,14 +12,20 @@ def clean_strings(*, s:str)->str:
     Returns:
         str: null for entries without  a single alphabet, no extraspaces/whitespaces, upper case
     """
+    if pd.isna(s):
+        return s
+    
+    s = str(s)
+    s = s.replace("\n"," ")
+    s = re.sub(r'[^a-zA-Z0-9]', ' ', s)
+    s = re.sub(r' {2,}', ' ', s)
+    s = s.strip().title()
 
-    if isinstance(s, str):
-        if re.search(r'[A-Za-z]', s):
-            s=re.sub(r'[\.\,\-\)\(]',' ', s)
-            s=re.sub(r'[^a-zA-Z0-9\s]+', '', s)
-            s=re.sub(r'\s+', ' ', s).strip()
-            return s.lstrip().rstrip().title()
-    return pd.NA
+    if s == '' or s == ' ':
+        return pd.NA
+    else:
+        return s
+            
 
 
 def standardise_age(*, age:str) -> float:

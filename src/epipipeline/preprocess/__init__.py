@@ -14,7 +14,6 @@ def clean_colname(*, colname: str) -> str:
 
     colname = str(colname).lower()
     colname = colname.replace("\n", " ")
-    colname = colname.replace("/", " ")
     colname = re.sub(r'[^a-z0-9]', ' ', colname)
     colname = re.sub(r' {2,}', ' ', colname)
     colname = colname.strip()

@@ -77,6 +77,8 @@ def fix_year(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = 
     if pd.isna(Date):
         return pd.NaT
     
+    assert (isinstance(Date, datetime.datetime)), "Format the dates before applying this function"  # noqa: E501
+    
     if tagDate:
         tagDate = pd.to_datetime(tagDate)
         current_year = tagDate.year

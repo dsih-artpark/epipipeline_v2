@@ -12,11 +12,12 @@ def clean_colname(*, colname: str) -> str:
         str: Clean column name after removing special characters, double spaces and replacing single spaces with _
     """
 
-    colname = str(colname).strip().lower()
+    colname = str(colname).lower()
     colname = colname.replace("\n", " ")
     colname = colname.replace("/", " ")
-    colname = re.sub(r'[^A-Za-z0-9]', ' ', colname)
+    colname = re.sub(r'[^a-z0-9]', ' ', colname)
     colname = re.sub(r' {2,}', ' ', colname)
+    colname = colname.strip()
     colname = re.sub(r' ', '_', colname)
 
     return colname

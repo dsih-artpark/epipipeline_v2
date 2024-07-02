@@ -1,6 +1,7 @@
 import datetime
 import logging
 import re
+from typing import Optional
 
 import pandas as pd
 
@@ -106,7 +107,7 @@ def fix_year_hist(*, Date: datetime.datetime, current_year: int) -> datetime.dat
     return (Date)
 
 
-def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, tagDate: datetime.datetime = None) -> tuple:
+def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, tagDate: Optional[datetime.datetime] = None) -> tuple:
     """Fixes invalid year entries, and attempts to fix logical check on symptom date>=sample date>=result date through date swapping
 
     Args:
@@ -161,7 +162,7 @@ def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, 
                 day=earlyDate.month, month=earlyDate.day, year=earlyDate.year)
             newLateDate = datetime.datetime(
                 day=lateDate.month, month=lateDate.day, year=lateDate.year)
-            if (newEarlyDate <= tagDate) & (newLateDate <= tagDate) & (pd.Timedelta(0, "d") <= newLateDate - newEarlyDate <= pd.Timedelta(60, "d")):
+            if (newEarlyDate <= tagDate) & (newLateDate <= tagDate) & (pd.Timedelta(0, "d") <= newLateDate - newEarlyDate <= pd.Timedelta(60, "d")):  # noqa: E501
                 return (newEarlyDate, newLateDate)
             else:
                 pass
@@ -191,7 +192,8 @@ def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, 
     return (earlyDate, lateDate)
 
 
-def check_date_to_today(*, Date: datetime.datetime, tagDate: datetime.datetime = None, districtName: str = None, districtID: str = None) -> datetime:
+def check_date_to_today(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = None, districtName: Optional[str] = None,
+                        districtID: Optional[str] = None) -> datetime:
     """Nullifies dates that are greater than current date
 
     Args:
@@ -211,8 +213,7 @@ def check_date_to_today(*, Date: datetime.datetime, tagDate: datetime.datetime =
         return Date
     elif Date > tagDate:
         if districtName and districtID:
-            logger.warning(f"Found a date greater than today in {
-                           districtName} ({districtID}). Removing...")
+            logger.warning(f"Found a date greater than today in {districtName} ({districtID}). Removing...")
         return pd.NaT
     else:
         return Date

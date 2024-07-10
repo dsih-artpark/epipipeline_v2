@@ -119,7 +119,8 @@ def preprocess_ka_linelist_v2(*,
                               standard_mapper,
                               default_values,
                               accepted_headers,
-                              required_headers):
+                              required_headers,
+                              ffill_cols_dict):
     """
     Preprocess raw district-level data into a standardised format for analysis.
 
@@ -132,6 +133,7 @@ def preprocess_ka_linelist_v2(*,
         default_values (dict): Dictionary of default values to be set for specific fields.
         accepted_headers (list): List of headers that are accepted in the final dataset.
         required_headers (list): List of headers that are required in the final dataset.
+        ffill_cols_dict (dict): Dictionary containing list of districts and variables where "" has been used to indicate ffill.
 
     Returns:
         dict: Preprocessed data dictionary with cleaned and standardised data for each district.
@@ -151,6 +153,7 @@ def preprocess_ka_linelist_v2(*,
         12. Filter and order columns based on accepted headers.
         13. Check for missing required headers and log warnings if any.
         14. Log the success of the preprocessing for each district and overall.
+        15. Ffill values where "" has been used
     """
     preprocessed_data_dict = {}
     all_districts_data_flag = True  # Flag to track if all districts have data
@@ -244,6 +247,13 @@ def preprocess_ka_linelist_v2(*,
                 df["event.test.test1.result"] = ns1_results
                 df["event.test.test2.result"] = igm_results
                 logger.debug(f"Separated NS1 and IgM results for district {districtID}")
+
+        # Ffill for districts and vars where "" has been used
+        if districtID in ffill_cols_dict.keys():
+            for col in ffill_cols_dict[districtID]:
+                if col in df.columns:
+                    df[col] = df[col].apply(lambda x: pd.NA if '"' in x else x)
+                    df[col] = df[col].ffill()
 
         # Combine name and address if needed
         columns = df.columns.to_list()

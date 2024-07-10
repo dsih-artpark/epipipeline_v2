@@ -1,8 +1,9 @@
+import datetime
 import logging
 import uuid
-import pandas as pd
-import datetime
+from typing import Optional
 
+import pandas as pd
 from epipipeline.standardise import (
     active_passive,
     clean_strings,
@@ -15,7 +16,7 @@ from epipipeline.standardise import (
     standardise_test_result,
     validate_age,
 )
-from epipipeline.standardise.dates import check_date_to_today, fix_symptom_date, fix_two_dates, string_clean_dates
+from epipipeline.standardise.dates import check_date_to_today, fix_symptom_date, fix_year, fix_two_dates, string_clean_dates
 from epipipeline.standardise.gis import subdist_ulb_mapping, village_ward_mapping
 
 # Set up logging
@@ -75,8 +76,7 @@ def standardise_ka_linelist_v3(*,
         # Standardise case variables
         # OPD, IPD
         if "case.opdOrIpd" not in df.columns.to_list():
-            logger.info(f"District {districtName} ({
-                        districtID}) does not have OPD-IPD info")
+            logger.info(f"District {districtName} ({districtID}) does not have OPD-IPD info")
             df["case.opdOrIpd"] = pd.NA
         else:
             df["case.opdOrIpd"] = df["case.opdOrIpd"].apply(
@@ -84,8 +84,7 @@ def standardise_ka_linelist_v3(*,
 
         # Public, Private
         if "case.publicOrPrivate" not in df.columns.to_list():
-            logger.info(f"District {districtName} ({
-                        districtID}) does not have Public-Private info")
+            logger.info(f"District {districtName} ({districtID}) does not have Public-Private info")
             df["case.publicOrPrivate"] = pd.NA
         else:
             df["case.publicOrPrivate"] = df["case.publicOrPrivate"].apply(
@@ -93,8 +92,7 @@ def standardise_ka_linelist_v3(*,
 
         # Active, Passive
         if "case.surveillance" not in df.columns.to_list():
-            logger.info(f"District {districtName} ({
-                        districtID}) does not have Active-Passive Surveillance info")
+            logger.info(f"District {districtName} ({districtID}) does not have Active-Passive Surveillance info")
             df["case.surveillance"] = pd.NA
         else:
             df["case.surveillance"] = df["case.surveillance"].apply(
@@ -102,8 +100,7 @@ def standardise_ka_linelist_v3(*,
 
         # Urban, Rural
         if "case.urbanOrRural" not in df.columns.to_list():
-            logger.info(f"District {districtName} ({
-                        districtID}) does not have Urban vs Rural info")
+            logger.info(f"District {districtName} ({districtID}) does not have Urban vs Rural info")
             df["case.urbanOrRural"] = pd.NA
         else:
             df["case.urbanOrRural"] = df["case.urbanOrRural"].apply(
@@ -122,6 +119,7 @@ def standardise_ka_linelist_v3(*,
         # Then, string clean dates and fix year errors to current/previous (if dec)/next (if jan)
         for var in datevars:
             df[var] = df[var].apply(lambda x: string_clean_dates(Date=x))
+            df[var] = df[var].apply(lambda x: fix_year(Date=x))
 
         # Then, carry out year and date logical checks and fixes on symptom and sample date first
         result = df.apply(lambda x: fix_two_dates(
@@ -143,7 +141,7 @@ def standardise_ka_linelist_v3(*,
 
         # Coerce dates to <= current date, and format dates to ISO format
         for var in datevars:
-            df[var] = df.apply(lambda x: check_date_to_today(
+            df[var] = df.apply(lambda x, var=var : check_date_to_today(
                 Date=x[var], districtName=x["location.admin2.name"], districtID=x["location.admin2.ID"]), axis=1)
             df[var] = pd.to_datetime(df[var]).dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
@@ -165,7 +163,7 @@ def standardise_ka_linelist_v3(*,
                    ) == 0, "District(s) missing"
 
         # Map subdistrict/ulb name to standardised LGD name and code
-        subdist = df.apply(lambda x: subdist_ulb_mapping(districtID=x["location.admin2.ID"], subdistName=x["location.admin3.name"], df=regionIDs_df,
+        subdist = df.apply(lambda x: subdist_ulb_mapping(districtID=x["location.admin2.ID"], subdistName=x["location.admin3.name"], df=regionIDs_df,  # noqa: E501
                                                          threshold=THRESHOLDS["subdistrict"]), axis=1)
         df["location.admin3.name"], df["location.admin3.ID"] = zip(*subdist)
 

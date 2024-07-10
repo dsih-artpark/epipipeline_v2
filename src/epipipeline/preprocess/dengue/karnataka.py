@@ -3,6 +3,7 @@ import os
 import re
 import warnings
 from typing import Optional
+
 import numpy as np
 import pandas as pd
 from dataio.download import download_dataset_v2
@@ -267,7 +268,7 @@ def preprocess_ka_linelist_v2(*,
                 logger.debug(f"Combined metadata name and address for district {districtID}")
             elif "metadata.name" in columns:
                 df["metadata.nameAddress"] = df["metadata.name"]
-                df = df.drop(columns(["metadata.name"]))
+                df = df.drop(columns = (["metadata.name"]))
                 logger.debug(f"Combined metadata name and address for district {districtID}")
             else:
                 df["metadata.nameAddress"] = pd.NA

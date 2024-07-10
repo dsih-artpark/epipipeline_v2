@@ -1,6 +1,7 @@
 import datetime
 import logging
 import re
+from typing import Optional
 
 import pandas as pd
 
@@ -28,13 +29,13 @@ def fix_symptom_date(*, symptomDate: str, resultDate: str) -> datetime.datetime:
                     symptomDate = resultDate - \
                         pd.to_timedelta(int(match.group(1)), unit='d')
                 except ValueError:
-                    return (pd.NA, pd.NA)
+                    return (pd.NaT, pd.NaT)
             else:
                 try:
                     resultDate = pd.to_datetime(resultDate)
-                    return (pd.NA, resultDate)
+                    return (pd.NaT, resultDate)
                 except ValueError:
-                    return (pd.NA, pd.NA)
+                    return (pd.NaT, pd.NaT)
         else:
             return (symptomDate, resultDate)
 
@@ -52,67 +53,66 @@ def string_clean_dates(*, Date) -> datetime:
     """
 
     if not re.search(r"\d", str(Date)):
-        return pd.NA
+        return pd.NaT
     else:
         Date = re.sub(r"\-\-", "-", str(Date))
     try:
         Date = pd.to_datetime(Date, format="mixed")
         return Date
     except ValueError:
-        return pd.NA
+        return pd.NaT
 
 
-def fix_year_hist(*, Date: datetime.datetime, current_year: int) -> datetime.datetime:
-    """Fixes year to current year/next year/previous year where year is not equal to the current year. Use only
-        while processing line-lists by year.
+def fix_year(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = None) -> datetime.datetime:
+    """Fixes year to current year/previous year where year is not equal to the current year. 
 
     Args:
         Date (datetime.datetime): date variable in datetime format
-        current_year (int): year if the file
+        tagDate (datetime.datetime), optional:  max date of cases - set to current date by default
 
     Returns:
         tuple: clean date with year = current/next/previous
     """
 
     if pd.isna(Date):
-        return pd.NA
-
-    assert isinstance(Date, datetime.datetime) and isinstance(
-        current_year, int), "Input date and int year"
+        return pd.NaT
+    
+    assert (isinstance(Date, datetime.datetime)), "Format the dates before applying this function"  # noqa: E501
+    
+    if tagDate:
+        tagDate = pd.to_datetime(tagDate)
+        current_year = tagDate.year
+    else:
+        current_year = datetime.datetime.today().year
 
     # if first date is not null, and year is not current year
     if Date.year != current_year:
-        # set year to current year if month is not Jan or Dec
-        if Date.month != 1 and Date.month != 12:
-            Date = datetime.datetime(
-                day=Date.day, month=Date.month, year=current_year)
-        else:
-            # if month is Jan or Dec, calculate the diff b/w the year and current year
-            year_diff = (Date.year - current_year)
-            # if diff greater than 1 - i.e., not from previous or next year, set year to current year
-            if abs(year_diff) > 1:
-                Date = datetime.datetime(
-                    day=Date.day, month=Date.month, year=current_year)
-            # if date is from previous or next year -
-            # if month is dec, set to previous year
-            elif Date.month == 12:
-                Date = datetime.datetime(
-                    day=Date.day, month=Date.month, year=current_year - 1)
-            # else (month is jan), set to next year
+        # set year to current year if month is not Dec
+        if Date.month != 12:
+            Date = datetime.datetime(day=Date.day, month=Date.month, year=current_year)
+        else: # december entries can be current/previous year
+            # year can be previous year
+            year_diff = (current_year - Date.year)
+            # if post-dated, set to current year
+            if year_diff < 0:
+                Date = datetime.datetime(day=Date.day, month=Date.month, year=current_year)
+            # if year is beyond 1 year prior, set to current year
+            elif year_diff >1:
+                Date = datetime.datetime(day=Date.day, month=Date.month, year=current_year)
+            # remaining dates are from dec of previous year, so we retain them
             else:
-                Date = datetime.datetime(
-                    day=Date.day, month=Date.month, year=current_year + 1)
+                pass
 
     return (Date)
 
 
-def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, tagDate: datetime.datetime = None) -> tuple:
+def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, tagDate: Optional[datetime.datetime] = None) -> tuple:
     """Fixes invalid year entries, and attempts to fix logical check on symptom date>=sample date>=result date through date swapping
 
     Args:
         earlyDate (datetime): First date in sequence (symptom date or sample date)
         lateDate (datetime): Second date in sequence (sample date or result date)
-        tagDate (datetime): Only swap if date < current date
+        tagDate (datetime), optional: Only swap if date < current date
 
     Returns:
         tuple: If logical errors can be fixed, returns updated date(s). Else, returns original dates.
@@ -161,7 +161,7 @@ def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, 
                 day=earlyDate.month, month=earlyDate.day, year=earlyDate.year)
             newLateDate = datetime.datetime(
                 day=lateDate.month, month=lateDate.day, year=lateDate.year)
-            if (newEarlyDate <= tagDate) & (newLateDate <= tagDate) & (pd.Timedelta(0, "d") <= newLateDate - newEarlyDate <= pd.Timedelta(60, "d")):
+            if (newEarlyDate <= tagDate) & (newLateDate <= tagDate) & (pd.Timedelta(0, "d") <= newLateDate - newEarlyDate <= pd.Timedelta(60, "d")):  # noqa: E501
                 return (newEarlyDate, newLateDate)
             else:
                 pass
@@ -191,28 +191,31 @@ def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, 
     return (earlyDate, lateDate)
 
 
-def check_date_to_today(*, Date: datetime.datetime, tagDate: datetime.datetime = None, districtName: str = None, districtID: str = None) -> datetime:
+def check_date_to_today(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = None, districtName: Optional[str] = None,
+                        districtID: Optional[str] = None) -> datetime:
     """Nullifies dates that are greater than current date
 
     Args:
         Date (datetime): Date variable (symptom date, sample date or result date)
-        tagDate (datetime): Date of file. Defaults to None and uses current date if not specified.
-        districtName: District Name to print for logger
-        districtID: District ID to print for logger
+        tagDate (datetime), optional: Date of file. Defaults to None and uses current date if not specified.
+        districtName, optional: District Name to print for logger
+        districtID, optional: District ID to print for logger
 
     Returns:
         datetime: pd.NaT if date is > current date or file date, else returns original date
     """
 
-    if tagDate is None:
+    if pd.isna(Date):
+        return pd.NaT
+    
+    if tagDate:
+        tagDate=pd.to_datetime(tagDate)
+    else:
         tagDate = datetime.datetime.today()
 
-    if pd.isna(Date):
-        return Date
-    elif Date > tagDate:
+    if Date > tagDate:
         if districtName and districtID:
-            logger.warning(f"Found a date greater than today in {
-                           districtName} ({districtID}). Removing...")
+            logger.warning(f"Found a date greater than today in {districtName} ({districtID}). Removing...")
         return pd.NaT
     else:
         return Date

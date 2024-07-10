@@ -252,7 +252,7 @@ def preprocess_ka_linelist_v2(*,
         if districtID in ffill_cols_dict.keys():
             for col in ffill_cols_dict[districtID]:
                 if col in df.columns:
-                    df[col] = df[col].apply(lambda x: pd.NA if '"' in x else x)
+                    df[col] = df[col].apply(lambda x: pd.NA if '"' in str(x) else str(x))
                     df[col] = df[col].ffill()
 
         # Combine name and address if needed

@@ -16,7 +16,7 @@ from epipipeline.standardise import (
     standardise_test_result,
     validate_age,
 )
-from epipipeline.standardise.dates import check_date_to_today, fix_symptom_date, fix_year, fix_two_dates, string_clean_dates
+from epipipeline.standardise.dates import check_date_to_today, fix_symptom_date, fix_two_dates, fix_year, string_clean_dates
 from epipipeline.standardise.gis import subdist_ulb_mapping, village_ward_mapping
 
 # Set up logging
@@ -28,7 +28,7 @@ logging.captureWarnings(True)
 
 def standardise_ka_linelist_v3(*,
                                preprocessed_data_dict: dict, THRESHOLDS: dict, STR_VARS: list,
-                               regionIDs_df: pd.DataFrame, regionIDs_dict: dict, data_dictionary: dict, tagDate: datetime.datetime = None) -> pd.DataFrame:
+                               regionIDs_df: pd.DataFrame, regionIDs_dict: dict, data_dictionary: dict, tagDate: Optional[datetime.datetime] = None) -> pd.DataFrame:  # noqa: E501
     """standardises preprocessed line lists for KA Dengue
 
     Args:

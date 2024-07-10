@@ -190,6 +190,7 @@ def standardise_ka_linelist_v3(*,
         headers = [col for col in df.columns.to_list(
         ) if data_dictionary[col]["access"]]
 
+        headers = sorted(headers, key=list(data_dictionary.keys()).index)
         df = df[headers]
 
         standardise_data_dict[districtID] = df

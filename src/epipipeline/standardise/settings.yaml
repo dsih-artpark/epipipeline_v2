@@ -1,0 +1,8 @@
+geo_prefixes:
+  - "country"
+  - "state"
+  - "district"
+  - "subdistrict"
+  - "ulb"
+  - "village"
+  - "ward"

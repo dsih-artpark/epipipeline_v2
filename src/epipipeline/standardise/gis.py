@@ -11,6 +11,8 @@ import pandas as pd
 from fuzzywuzzy import process
 from shapely.geometry import Point
 from tqdm import tqdm
+import pkg_resources
+import yaml
 
 # Set up logging
 logger = logging.getLogger("epipipeline.standardise.geocode")
@@ -52,7 +54,7 @@ def dist_mapping(*, stateID: str, districtName: str, df: pd.DataFrame, threshold
     return (districtName, districtCode)  # returns original name if unmatched
 
 
-def subdist_ulb_mapping(*, districtID: str, subdistName: str, df: pd.DataFrame, threshold: int = 65) -> tuple:
+def subdist_ulb_mapping(*, districtID: str, subdistName: str, df: pd.DataFrame, threshold: int = 65, childType: Union[str, list, None] = None) -> tuple:
     """Standardises subdistrict/ulb names and codes (based on LGD), provided the standardised district ID
 
     Args:
@@ -60,20 +62,49 @@ def subdist_ulb_mapping(*, districtID: str, subdistName: str, df: pd.DataFrame, 
         subdistName (str): raw subdistrict/ulb name
         df (pd.DataFrame): regions.csv as a dataframe
         threshold (int): cut-off for fuzzy matching, default set to 65
+        childType (Union[str, list, None], optional): Specify the type(s) of children (subdistrict/ulb) to consider. Defaults to None.
 
     Returns:
         tuple: (LGD subdistrict/ulb name, LGD subdistrict/ulb code or admin_0 if not matched)
     """
-    # subdist
+
+    # if subdist name is na, return admin_0
     if pd.isna(subdistName):
         return (pd.NA, "admin_0")
 
+    # string clean subdist name
     subdistName = str(subdistName).title().strip()
     subdistName = re.sub(r'\(?\sU\)?$', "Urban",
                          subdistName, flags=re.IGNORECASE)
     subdistName = re.sub(r'\(?\sR\)?$', "Rural",
                          subdistName, flags=re.IGNORECASE)
-    subdistricts = df[df["parentID"] == districtID]["regionName"].to_list()
+    
+    # filter for subdistricts/ulbs
+    if childType:
+        with open(pkg_resources.resource_filename(__name__, 'settings.yaml'), 'r') as f:
+            settings = yaml.safe_load(f)
+            expected_childType = settings["geo_prefixes"]
+
+        if isinstance(childType, str):
+            childType = [childType.lower().strip()]
+            if childType not in expected_childType:
+                raise ValueError("ChildType does not exist")
+        elif isinstance(childType, list):
+            childType = [str(type).lower().strip() for type in childType]
+            if not childType.issubset(expected_childType):
+                raise ValueError("Child Type not found")
+        else:
+            raise TypeError("Child Type must be a string or list of strings")
+        
+        subdistricts = df[(df["parentID"] == districtID) & (df["regionID"].str.startswith(tuple(childType)))]
+    else:
+        subdistricts = df[(df["parentID"] == districtID)]
+
+    if subdistricts.empty:
+        raise ValueError("Child Type not found")
+    else:
+        subdistricts = subdistricts["regionName"].to_list()
+        
     match = process.extractOne(
         subdistName, subdistricts, score_cutoff=threshold)
     if match:
@@ -276,3 +307,42 @@ def check_bounds(*, lat: Union[float, pd.Series], long: Union[float, pd.Series],
                        for lat_, long_, contained in zip(lat, long, contains)])
 
     return result.iloc[0] if len(result) == 1 else result
+
+def clean_lat_long(*, lat: Union[str, float], long: Union[str, float]) -> tuple:
+    # If lat or long is pd.NA, return pd.NA for both values
+    if pd.isna(lat) or pd.isna(long):
+        return (pd.NA, pd.NA)
+
+    # Clean lat and long if they are not floats
+    if not isinstance(lat, float):
+        lat = re.sub(r"[^\d.-]", "", str(lat))
+        try:
+            lat = float(lat)
+        except ValueError:
+            return (pd.NA, pd.NA)
+    
+    if not isinstance(long, float):
+        long = re.sub(r"[^\d.-]", "", str(long))
+        try:
+            long = float(long)
+        except ValueError:
+            return (pd.NA, pd.NA)
+
+    # Validate lat
+    if not (-90 <= lat <= 90):
+        if '.' not in str(lat):
+            lat = float(str(lat)[:2] + "." + str(lat)[2:])
+        if not (-90 <= lat <= 90):
+            return (pd.NA, pd.NA)
+    
+    # Validate long
+    if not (-180 <= long <= 180):
+        if '.' not in str(long):
+            long = float(str(long)[:3] + "." + str(long)[3:])
+        if not (-180 <= long <= 180):
+            return (pd.NA, pd.NA)
+
+    return (lat, long)
+
+
+

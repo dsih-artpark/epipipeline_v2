@@ -2,7 +2,6 @@ import datetime
 import logging
 import re
 from typing import Optional
-
 import pandas as pd
 
 # Set up logging
@@ -52,14 +51,17 @@ def string_clean_dates(*, Date) -> datetime:
         datetime: date in datetime format
     """
 
-    if not re.search(r"\d", str(Date)):
+    if not re.search(r"[0-9]", str(Date)):
         return pd.NaT
     else:
         Date = re.sub(r"\-\-", "-", str(Date))
+        Date = re.sub(r".","-", str(Date))
+        Date = re.sub(r"[A-Za-z]", "", str(Date))
     try:
-        Date = pd.to_datetime(Date, format="mixed")
+        Date = pd.to_datetime(Date, infer_datetime_format=True)
         return Date
     except ValueError:
+        logging.log(f"Unable to convert {Date} to datetime format, nullified")
         return pd.NaT
 
 
@@ -77,10 +79,16 @@ def fix_year(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = 
     if pd.isna(Date):
         return pd.NaT
     
-    assert (isinstance(Date, datetime.datetime)), "Format the dates before applying this function"  # noqa: E501
-    
+    try:
+        Date = pd.to_datetime(Date).to_pydatetime()
+    except AttributeError as e:
+        raise(f"{e}. Date entered is invalid")
+
     if tagDate:
-        tagDate = pd.to_datetime(tagDate)
+        try:
+            tagDate = pd.to_datetime(tagDate)
+        except Exception as e:
+            raise(f"{e}. Date entered is invalid")
         current_year = tagDate.year
     else:
         current_year = datetime.datetime.today().year
@@ -105,55 +113,79 @@ def fix_year(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = 
 
     return (Date)
 
-
-def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, tagDate: Optional[datetime.datetime] = None) -> tuple:
-    """Fixes invalid year entries, and attempts to fix logical check on symptom date>=sample date>=result date through date swapping
+def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, minDate: Optional[datetime.datetime] = None, tagDate: Optional[datetime.datetime] = None) -> tuple:
+    """Fixes invalid year entries, and attempts to fix logical check on symptom date>=sample date>=result date through date swapping if delta is >=15
 
     Args:
         earlyDate (datetime): First date in sequence (symptom date or sample date)
         lateDate (datetime): Second date in sequence (sample date or result date)
-        tagDate (datetime), optional: Only swap if date < current date
+        tagDate (datetime), optional: Ceiling date defaults to current date, only swap if date <=tagDate
+        minDate (datetime), optional: Floor date defaults to None, only swap if date >= minDate
 
     Returns:
         tuple: If logical errors can be fixed, returns updated date(s). Else, returns original dates.
     """
 
-    assert (isinstance(lateDate, datetime.datetime) or pd.isna(lateDate)) and (isinstance(earlyDate, datetime.datetime) or pd.isna(earlyDate)), "Format the dates before applying this function"  # noqa: E501
-
-    # Fix dates
     # if any of the dates is na, return dates as is
     if pd.isna(earlyDate) or pd.isna(lateDate):
         return (earlyDate, lateDate)
+    
+    try:
+        lateDate = pd.to_datetime(lateDate).to_pydatetime()
+        earlyDate = pd.to_datetime(earlyDate).to_pydatetime()
+    except AttributeError as e:
+        raise (f"{e}. Date entered is invalid.")
 
+    # Fix dates
     # Check tag date format if provided
     if tagDate:
-        if not isinstance(tagDate, datetime.datetime):
+        try:
             tagDate = pd.to_datetime(tagDate)
+        except Exception as e:
+            (f"{e}. Date entered is invalid.")
+
     else:
         tagDate = datetime.datetime.today()
 
+    # Check min date
+    if minDate:
+        try:
+            minDate = pd.to_datetime(minDate)
+        except Exception as e:
+            (f"{e}. Date entered is invalid.")
+
     delta = lateDate - earlyDate
 
-    # if diff between second and first date is >60 or <0, attempt to fix dates
-    if (pd.Timedelta(60, "d") < delta) | (delta < pd.Timedelta(0, "d")):
+    # if diff between second and first date is >15 or <0, attempt to fix dates
+    if (pd.Timedelta(15, "d") < delta) | (delta < pd.Timedelta(0, "d")):
         # if day of second date=month of first date and day is in month-range, try swapping it's day and month
         # e.g. 2023-02-05, 2023-06-02
         if (lateDate.day == earlyDate.month) & (lateDate.day in range(1, 13)):
             newLateDate = datetime.datetime(
                 day=lateDate.month, month=lateDate.day, year=lateDate.year)
             if (newLateDate <= tagDate) & (pd.Timedelta(0, "d") <= newLateDate - earlyDate <= pd.Timedelta(60, "d")):
+                if minDate:
+                    if newLateDate>=minDate:
+                        return (earlyDate, newLateDate)
+                    else:
+                        pass # skip to next condition
                 return (earlyDate, newLateDate)
             else:
-                pass
+                pass # skip to next condition
         # if day of first date=month of second date and day is in month-range, try swapping it's day and month
         # e.g. 2023-06-02, 2023-02-05
         if (earlyDate.day == lateDate.month) & (earlyDate.day in range(1, 13)):
             newEarlyDate = datetime.datetime(
                 day=earlyDate.month, month=earlyDate.day, year=earlyDate.year)
             if (newEarlyDate <= tagDate) & (pd.Timedelta(0, "d") <= lateDate - newEarlyDate <= pd.Timedelta(60, "d")):
+                if minDate:
+                    if newEarlyDate>=minDate:
+                        return(newEarlyDate, lateDate)
+                    else:
+                        pass # skip to next condition
                 return (newEarlyDate, lateDate)
             else:
-                pass
+                pass # skip to next condition
         # if both dates have the same day and different month, try swapping day and month for both dates
         # e.g. 2023-08-02, 2023-11-02
         if (earlyDate.day == lateDate.day) & (earlyDate.day in range(1, 13)):
@@ -162,27 +194,42 @@ def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, 
             newLateDate = datetime.datetime(
                 day=lateDate.month, month=lateDate.day, year=lateDate.year)
             if (newEarlyDate <= tagDate) & (newLateDate <= tagDate) & (pd.Timedelta(0, "d") <= newLateDate - newEarlyDate <= pd.Timedelta(60, "d")):  # noqa: E501
+                if minDate:
+                    if (newEarlyDate >= minDate) & (newLateDate >= minDate):
+                        return (newEarlyDate, newLateDate)
+                    else:
+                        pass # skip to next condition
                 return (newEarlyDate, newLateDate)
             else:
-                pass
+                pass # skip to next condition
         # if difference between day of second date and month of first date is 1, try swapping day and month for second date
         # e.g. 2023-08-27, 2023-06-09
         if (lateDate.day-earlyDate.month == 1) & (lateDate.day in range(1, 13)):
             newLateDate = datetime.datetime(
                 day=lateDate.month, month=lateDate.day, year=lateDate.year)
             if (newLateDate <= tagDate) & (pd.Timedelta(0, "d") <= newLateDate-earlyDate <= pd.Timedelta(60, "d")):
+                if minDate:
+                    if newLateDate >= minDate:
+                        return (earlyDate, newLateDate)
+                    else:
+                        pass # skip to next condition
                 return (earlyDate, newLateDate)
             else:
-                pass
+                pass # skip to next condition
         # if difference between day of first date and month of second date is -1, try swapping day and month for first date
         # e.g., 2023-10-07, 2023-08-09
         if (earlyDate.day-lateDate.month == -1):  # standalone fix to sample date
             newEarlyDate = datetime.datetime(
                 day=earlyDate.month, month=earlyDate.day, year=earlyDate.year)
             if (newEarlyDate <= tagDate) & (pd.Timedelta(0, "d") <= lateDate-newEarlyDate <= pd.Timedelta(60, "d")):
+                if minDate:
+                    if newEarlyDate >= minDate:
+                        return (newEarlyDate, lateDate)
+                    else:
+                        pass # skip to next condition
                 return (newEarlyDate, lateDate)
             else:
-                pass
+                pass # skip to next condition
     else:
         # returns original dates if dates meet logical conditions
         return (earlyDate, lateDate)
@@ -208,8 +255,16 @@ def check_date_to_today(*, Date: datetime.datetime, tagDate: Optional[datetime.d
     if pd.isna(Date):
         return pd.NaT
     
+    try:
+        Date = pd.to_datetime(Date).to_pydatetime()
+    except AttributeError as e:
+        raise(f"{e}. Date entered is invalid")
+
     if tagDate:
-        tagDate=pd.to_datetime(tagDate)
+        try:
+            tagDate = pd.to_datetime(tagDate)
+        except Exception as e:
+            raise(f"{e}. Date entered is invalid")
     else:
         tagDate = datetime.datetime.today()
 

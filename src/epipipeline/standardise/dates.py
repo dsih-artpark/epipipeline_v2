@@ -131,8 +131,8 @@ def fix_year_for_ll(*, Date: datetime.datetime, tagDate: Optional[datetime.datet
 
     return (Date)
 
-def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, minDate: Optional[datetime.datetime] = None, tagDate: Optional[datetime.datetime] = None) -> tuple:
-    """Fixes invalid year entries, and attempts to fix logical check on symptom date>=sample date>=result date through date swapping if delta is >=15
+def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, minDate: Optional[datetime.datetime] = None, tagDate: Optional[datetime.datetime] = None, days_diff: int = 30) -> tuple:
+    """Fixes invalid year entries, and attempts to fix logical check on symptom date>=sample date>=result date through date swapping if delta is >=30 or days_diff specified
 
     Args:
         earlyDate (datetime): First date in sequence (symptom date or sample date)
@@ -175,7 +175,7 @@ def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, 
     delta = lateDate - earlyDate
 
     # if diff between second and first date is >15 or <0, attempt to fix dates
-    if (pd.Timedelta(15, "d") < delta) | (delta < pd.Timedelta(0, "d")):
+    if (pd.Timedelta(days_diff, "d") < delta) | (delta < pd.Timedelta(0, "d")):
         # if day of second date=month of first date and day is in month-range, try swapping it's day and month
         # e.g. 2023-02-05, 2023-06-02
         if (lateDate.day == earlyDate.month) & (lateDate.day in range(1, 13)):

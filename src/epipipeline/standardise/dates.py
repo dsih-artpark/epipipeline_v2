@@ -78,7 +78,7 @@ def string_clean_dates(*, Date) -> datetime.datetime:
             
     # Try parsing without any format, if value error, nullify
     try:
-        return pd.to_datetime(Date)
+        return pd.to_datetime(Date, format="mixed")
     except ValueError:
         return pd.NaT
 

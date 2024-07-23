@@ -3,6 +3,7 @@ import logging
 import re
 from typing import Optional
 import pandas as pd
+from dateutil.parser import parse
 
 # Set up logging
 logger = logging.getLogger("epipipeline.standardise.dengue.karnataka")
@@ -53,15 +54,33 @@ def string_clean_dates(*, Date) -> datetime:
 
     if not re.search(r"[0-9]", str(Date)):
         return pd.NaT
-    else:
-        Date = re.sub(r"\-\-", "-", str(Date))
-        Date = re.sub(r"\.","-", str(Date))
+    
+    Date = re.sub(r"\-\-", "-", str(Date))
+    Date = re.sub(r"\.","/", str(Date))
+
+    formats = ["%d/%m/%y", "%m/%d/%y", "%d/%m/%Y", "%m/%d/%Y"]
+    
+    for fmt in formats:
+        try:
+            parsed_date = pd.to_datetime(str(Date), format=fmt)
+            
+            # Assuming two-digit year 24 is 2024
+            if parsed_date.year < 100:
+                if parsed_date.year >= 20:
+                    parsed_date = parsed_date.replace(year=2000 + parsed_date.year)
+                else:
+                    parsed_date = parsed_date.replace(year=1900 + parsed_date.year)
+            
+            return parsed_date
+        except ValueError:
+            continue
+            
+    # Fallback to dateutil parser if formats fail
     try:
-        Date = pd.to_datetime(Date, infer_datetime_format=True)
-        return Date
+        return parse(str(Date))
     except ValueError:
-        logger.warning(f"Invalid date {Date}. Removing...")
         return pd.NaT
+
 
 
 def fix_year_for_ll(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = None) -> datetime.datetime:

@@ -59,7 +59,8 @@ def string_clean_dates(*, Date) -> Union[datetime.datetime, pd.NaT]:
     Date = re.sub(r"\.","/", str(Date))
 
     formats = ["%d/%m/%y", "%m/%d/%y", "%d/%m/%Y", "%m/%d/%Y"]
-    
+
+    # parse with multiple formats
     for fmt in formats:
         try:
             parsed_date = pd.to_datetime(str(Date), format=fmt)
@@ -75,9 +76,9 @@ def string_clean_dates(*, Date) -> Union[datetime.datetime, pd.NaT]:
         except ValueError:
             continue
             
-    # Fallback to dateutil parser if formats fail
+    # Try parsing without any format, if value error, nullify
     try:
-        return parse(str(Date))
+        return pd.to_datetime(Date)
     except ValueError:
         return pd.NaT
 

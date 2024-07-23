@@ -17,14 +17,7 @@ standard_mapper = config["standard_mapper"]
 required_headers = config["required_headers"]
 
 # download the raw file
-# raw_excel_path = download_dataset_v2(dsid=rdsid, data_state = "raw")
-
-
-####  --TEMP --REMOVE ####
-
-raw_excel_path='EPRDS33-Odisha_Dengue_LL/'
-## Note: change to std expected file names
-
+raw_excel_path = download_dataset_v2(dsid=rdsid, data_state = "raw")
 wb=pd.ExcelFile(f"data/{raw_excel_path}/{raw_file}")
 
 for sheet in wb.sheet_names:

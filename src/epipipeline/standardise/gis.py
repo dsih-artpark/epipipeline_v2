@@ -88,11 +88,11 @@ def subdist_ulb_mapping(*, districtID: str, subdistName: str, df: pd.DataFrame, 
         if isinstance(childType, str):
             childType = [childType.lower().strip()]
             if childType not in expected_childType:
-                raise ValueError("ChildType does not exist")
+                raise ValueError(f"ChildType does not exist in master {expected_childType}")
         elif isinstance(childType, list):
             childType = [str(type).lower().strip() for type in childType]
             if not childType.issubset(expected_childType):
-                raise ValueError("Child Type not found")
+                raise ValueError(f"Child Type not found in {expected_childType}")
         else:
             raise TypeError("Child Type must be a string or list of strings")
         

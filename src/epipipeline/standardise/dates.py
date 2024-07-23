@@ -11,7 +11,7 @@ logger = logging.getLogger("epipipeline.standardise.dengue.karnataka")
 logging.captureWarnings(True)
 
 
-def fix_symptom_date(*, symptomDate: str, resultDate: str) -> datetime.datetime:
+def extract_symptom_date(*, symptomDate: str, resultDate: str) -> datetime.datetime:
     """If symptom date is in number of days, extracts number and converts to date as result date - number
 
     Args:
@@ -61,11 +61,11 @@ def string_clean_dates(*, Date) -> datetime:
         Date = pd.to_datetime(Date, infer_datetime_format=True)
         return Date
     except ValueError:
-        logging.log(f"Unable to convert {Date} to datetime format, nullified")
+        logger.warning(f"Invalid date {Date}. Removing...")
         return pd.NaT
 
 
-def fix_year(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = None) -> datetime.datetime:
+def fix_year_for_ll(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = None) -> datetime.datetime:
     """Fixes year to current year/previous year where year is not equal to the current year. 
 
     Args:
@@ -238,13 +238,14 @@ def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, 
     return (earlyDate, lateDate)
 
 
-def check_date_to_today(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = None, districtName: Optional[str] = None,
+def check_date_bounds(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = None, minDate: Optional[datetime.datetime] = None, districtName: Optional[str] = None,
                         districtID: Optional[str] = None) -> datetime:
-    """Nullifies dates that are greater than current date
+    """Nullifies dates that are less than min date provided and greater than max date provided/current date
 
     Args:
         Date (datetime): Date variable (symptom date, sample date or result date)
         tagDate (datetime), optional: Date of file. Defaults to None and uses current date if not specified.
+        minDate (datetime), optional: Min date. Defaults to none and does not check for min bound if none
         districtName, optional: District Name to print for logger
         districtID, optional: District ID to print for logger
 
@@ -267,10 +268,25 @@ def check_date_to_today(*, Date: datetime.datetime, tagDate: Optional[datetime.d
             raise(f"{e}. Date entered is invalid")
     else:
         tagDate = datetime.datetime.today()
+    
+    if minDate: # check lower bound
+        try:
+            minDate = pd.to_datetime(minDate)
+        except Exception as e:
+            raise(f"{e}. Date entered is invalid")
 
-    if Date > tagDate:
+        if Date < minDate:
+            if districtName and districtID:
+                logger.warning(f"Found a date greater than today in {districtName} ({districtID}). Removing...")
+            else:
+                logger.warning(f"Found a date greater than today. Removing...")
+            return pd.NA
+
+    if Date > tagDate: # check upper bound
         if districtName and districtID:
             logger.warning(f"Found a date greater than today in {districtName} ({districtID}). Removing...")
+        else:
+            logger.warning(f"Found a date greater than today. Removing...")
         return pd.NaT
-    else:
-        return Date
+    
+    return Date

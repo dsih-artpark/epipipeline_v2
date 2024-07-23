@@ -86,13 +86,15 @@ def subdist_ulb_mapping(*, districtID: str, subdistName: str, df: pd.DataFrame, 
             expected_childType = settings["geo_prefixes"]
 
         if isinstance(childType, str):
-            childType = [childType.lower().strip()]
+            childType = childType.lower().strip()
             if childType not in expected_childType:
-                raise ValueError(f"ChildType does not exist in master {expected_childType}")
+                raise ValueError(f"ChildType: {childType} does not exist in master: {expected_childType}")
+            else:
+                childType=[childType]
         elif isinstance(childType, list):
             childType = [str(type).lower().strip() for type in childType]
             if not childType.issubset(expected_childType):
-                raise ValueError(f"Child Type not found in {expected_childType}")
+                raise ValueError(f"Child Type: {childType} not found in master: {expected_childType}")
         else:
             raise TypeError("Child Type must be a string or list of strings")
         

@@ -47,10 +47,12 @@ for sheet in wb.sheet_names:
     # string clean colnames
     headers = [clean_colname(colname=col) for col in df.columns]
     df.columns=headers
-
+    print(df.columns)
+    
     # rename columns based on standard mappers
     header_mapper=map_column(map_dict=standard_mapper)
     df=df.rename(columns=header_mapper)
+
 
     # extract test results from test cols
     if "test_method" and "result" in df.columns:
@@ -69,7 +71,10 @@ for sheet in wb.sheet_names:
     df=df.dropna(subset=config["dropna_cols"])
 
     # remove extraneous cols
-    df=df[list(set(df.columns).intersection(set(data_dictionary.keys())))]
+    for col in df.columns:
+        if col not in data_dictionary.keys():
+            df=df.drop(columns=col)
 
     # export to preprocessed
     df.to_csv(f"orissa/preprocessed/{sheet}.csv", index=False)
+

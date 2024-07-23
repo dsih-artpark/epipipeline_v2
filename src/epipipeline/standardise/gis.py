@@ -32,7 +32,7 @@ def dist_mapping(*, stateID: str, districtName: str, df: pd.DataFrame, threshold
         tuple: (LGD district name, LGD district code or admin_0 if not matched)
     """
 
-    if pd.isna(districtName):
+    if stateID=="admin_0" or pd.isna(districtName):
         return (pd.NA, "admin_0")
 
     districtName = str(districtName).title().strip()
@@ -68,7 +68,7 @@ def subdist_ulb_mapping(*, districtID: str, subdistName: str, df: pd.DataFrame, 
     """
 
     # if subdist name is na, return admin_0
-    if pd.isna(subdistName):
+    if districtID=="admin_0" or pd.isna(subdistName):
         return (pd.NA, "admin_0")
 
     # string clean subdist name
@@ -102,7 +102,7 @@ def subdist_ulb_mapping(*, districtID: str, subdistName: str, df: pd.DataFrame, 
         subdistricts = df[(df["parentID"] == districtID)]
 
     if subdistricts.empty:
-        raise ValueError("Child Type not found")
+        raise ValueError(f"No subdistricts returned for {districtID}")
     else:
         subdistricts = subdistricts["regionName"].to_list()
         
@@ -129,7 +129,7 @@ def village_ward_mapping(*, subdistID: str, villageName: str, df: pd.DataFrame, 
     Returns:
         tuple: (LGD village/ward name, LGD village/ward code or admin_0 if not matched)
     """
-    if pd.isna(villageName):
+    if subdistID=="admin_0" or pd.isna(villageName):
         return (pd.NA, "admin_0")
 
     villageName = str(villageName).title().strip()

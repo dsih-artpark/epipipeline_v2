@@ -309,7 +309,7 @@ def check_bounds(*, lat: Union[float, pd.Series], long: Union[float, pd.Series],
 
     return result.iloc[0] if len(result) == 1 else result
 
-def clean_lat_long(*, lat: Union[str, float], long: Union[str, float]) -> Tuple[Union[float, pd.NA], Union[float, pd.NA]]:
+def clean_lat_long(*, lat: Union[str, float], long: Union[str, float]) -> Tuple[float, float]:
     """Validates lat long positions after removing extraneous elements and adding floating point where missing
 
     Args:

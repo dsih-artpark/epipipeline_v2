@@ -250,7 +250,7 @@ def check_date_bounds(*, Date: datetime.datetime, tagDate: Optional[datetime.dat
         districtID, optional: District ID to print for logger
 
     Returns:
-        datetime: pd.NaT if date is > current date or file date, else returns original date
+        datetime: pd.NaT if date is > current date or file date or if date < min date, else returns original date
     """
 
     if pd.isna(Date):

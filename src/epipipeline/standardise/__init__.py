@@ -3,7 +3,7 @@ import pandas as pd
 from typing import Union, Tuple
 
 
-def clean_strings(*, s:str) -> Union[str, pd.NA]:
+def clean_strings(*, s:str) -> str:
     """Standardises string entries
 
     Args:
@@ -28,7 +28,7 @@ def clean_strings(*, s:str) -> Union[str, pd.NA]:
             
 
 
-def standardise_age(*, age:str) -> Union[float, pd.NA]:
+def standardise_age(*, age:str) -> float:
     """Extracts year and month from string age entries
 
     Args:
@@ -72,7 +72,7 @@ def standardise_age(*, age:str) -> Union[float, pd.NA]:
     else:
         return pd.NA
 
-def validate_age(*, age: float, upper_limit: float =105) -> Union[float, pd.NA]:
+def validate_age(*, age: float, upper_limit: float =105) -> float:
     """Validates age range
 
     Args:

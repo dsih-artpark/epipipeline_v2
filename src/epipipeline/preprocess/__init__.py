@@ -1,6 +1,6 @@
 import re
-
 import pandas as pd
+from typing import Tuple
 
 
 def clean_colname(*, colname: str) -> str:
@@ -44,7 +44,7 @@ def map_column(*, map_dict: dict) -> dict:
     return col_mapper
 
 
-def extract_test_method_with_result(*, test_method: str, result: str) -> tuple:
+def extract_test_method_with_result(*, test_method: str, result: str) -> Tuple[str, str]:
     """Creates separate NS1 and IgM columns with corresponding result if test_method and result variables provided
 
     Args:
@@ -68,7 +68,7 @@ def extract_test_method_with_result(*, test_method: str, result: str) -> tuple:
         return (test1, test2)
 
 
-def extract_test_method_without_result(*, test_method: str) -> tuple:
+def extract_test_method_without_result(*, test_method: str) -> Tuple[str, str]:
     """Creates separate NS1 and IgM columns with positive as default result if only test_method is provided
 
     Args:

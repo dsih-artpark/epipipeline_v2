@@ -1,7 +1,7 @@
 import datetime
 import logging
 import re
-from typing import Optional
+from typing import Optional, Tuple, Union
 import pandas as pd
 from dateutil.parser import parse
 
@@ -12,7 +12,7 @@ logger = logging.getLogger("epipipeline.standardise.dengue.karnataka")
 logging.captureWarnings(True)
 
 
-def extract_symptom_date(*, symptomDate: str, resultDate: str) -> datetime.datetime:
+def extract_symptom_date(*, symptomDate: str, resultDate: str) -> Tuple[Union[datetime.datetime,pd.NA], Union[datetime.datetime, pd.NA]]:
     """If symptom date is in number of days, extracts number and converts to date as result date - number
 
     Args:
@@ -42,7 +42,7 @@ def extract_symptom_date(*, symptomDate: str, resultDate: str) -> datetime.datet
     return (symptomDate, resultDate)
 
 
-def string_clean_dates(*, Date) -> datetime:
+def string_clean_dates(*, Date) -> Union[datetime.datetime, pd.NaT]:
     """Nullifies dates with no number, cleans extraneous elements in dates, and converts to datetime format
 
     Args:
@@ -131,7 +131,7 @@ def fix_year_for_ll(*, Date: datetime.datetime, tagDate: Optional[datetime.datet
 
     return (Date)
 
-def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, minDate: Optional[datetime.datetime] = None, tagDate: Optional[datetime.datetime] = None, days_diff: int = 30) -> tuple:
+def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, minDate: Optional[datetime.datetime] = None, tagDate: Optional[datetime.datetime] = None, days_diff: int = 30) -> Tuple[Union[datetime.datetime,pd.NA], Union[datetime.datetime, pd.NA]]:
     """Fixes invalid year entries, and attempts to fix logical check on symptom date>=sample date>=result date through date swapping if delta is >=30 or days_diff specified
 
     Args:
@@ -257,7 +257,7 @@ def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, 
 
 
 def check_date_bounds(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = None, minDate: Optional[datetime.datetime] = None, districtName: Optional[str] = None,
-                        districtID: Optional[str] = None) -> datetime:
+                        districtID: Optional[str] = None) -> Union[datetime.datetime, pd.NaT]:
     """Nullifies dates that are less than min date provided and greater than max date provided/current date
 
     Args:
@@ -298,7 +298,7 @@ def check_date_bounds(*, Date: datetime.datetime, tagDate: Optional[datetime.dat
                 logger.warning(f"Found a date greater than today in {districtName} ({districtID}). Removing...")
             else:
                 logger.warning(f"Found a date greater than today. Removing...")
-            return pd.NA
+            return pd.NaT
 
     if Date > tagDate: # check upper bound
         if districtName and districtID:

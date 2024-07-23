@@ -1,9 +1,9 @@
 import re
-
 import pandas as pd
+from typing import Union, Tuple
 
 
-def clean_strings(*, s:str)->str:
+def clean_strings(*, s:str) -> Union[str, pd.NA]:
     """Standardises string entries
 
     Args:
@@ -28,7 +28,7 @@ def clean_strings(*, s:str)->str:
             
 
 
-def standardise_age(*, age:str) -> float:
+def standardise_age(*, age:str) -> Union[float, pd.NA]:
     """Extracts year and month from string age entries
 
     Args:
@@ -72,7 +72,7 @@ def standardise_age(*, age:str) -> float:
     else:
         return pd.NA
 
-def validate_age(*, age: float, upper_limit: float =105) -> float:
+def validate_age(*, age: float, upper_limit: float =105) -> Union[float, pd.NA]:
     """Validates age range
 
     Args:
@@ -93,7 +93,7 @@ def validate_age(*, age: float, upper_limit: float =105) -> float:
         return age
 
 
-def standardise_gender(*, gender:str)->str:
+def standardise_gender(*, gender:str) -> str:
     """Standardises gender
 
     Args:
@@ -130,7 +130,7 @@ def standardise_test_result(*, result:str) -> str:
     return "Unknown"
 
 
-def generate_test_count(*, test1:str, test2:str)->int:
+def generate_test_count(*, test1:str, test2:str) -> int:
     """Generates test count from test result variables
 
     Args:
@@ -165,7 +165,7 @@ def opd_ipd(*, s:str) -> str:
         elif re.search(r"OPD?", s, re.IGNORECASE):
             return "OPD"
         else:
-            return pd.NA
+            return "Unknown"
 
 def public_private(*, s:str) -> str:
     """Standardises entries for private or public
@@ -183,7 +183,7 @@ def public_private(*, s:str) -> str:
         elif re.search(r"Public|Pub|Govt|Government", s, re.IGNORECASE):
             return "Public"
         else:
-            return pd.NA
+            return "Unknown"
 
 
 def active_passive(*, s:str) -> str:
@@ -202,7 +202,7 @@ def active_passive(*, s:str) -> str:
         elif re.search(r"Pas?s?i?v?e?|P", s, re.IGNORECASE):
             return "Passive"
         else:
-            return pd.NA
+            return "Unknown"
 
 
 def rural_urban(*, s:str) -> str:
@@ -221,4 +221,4 @@ def rural_urban(*, s:str) -> str:
         elif re.search(r"Urba?n?|U", s, re.IGNORECASE):
             return "Urban"
         else:
-            return pd.NA
+            return "Unknown"

@@ -55,8 +55,7 @@ def string_clean_dates(*, Date) -> datetime:
         return pd.NaT
     else:
         Date = re.sub(r"\-\-", "-", str(Date))
-        Date = re.sub(r".","-", str(Date))
-        Date = re.sub(r"[A-Za-z]", "", str(Date))
+        Date = re.sub(r"\.","-", str(Date))
     try:
         Date = pd.to_datetime(Date, infer_datetime_format=True)
         return Date

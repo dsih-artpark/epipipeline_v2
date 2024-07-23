@@ -3,8 +3,7 @@ import os
 import re
 import subprocess
 import time
-from typing import Union
-
+from typing import Union, Tuple
 import geopandas as gpd
 import googlemaps
 import pandas as pd
@@ -20,7 +19,7 @@ logging.basicConfig(level=logging.INFO)
 logging.captureWarnings(True)
 
 
-def dist_mapping(*, stateID: str, districtName: str, df: pd.DataFrame, threshold: int = 65) -> tuple:
+def dist_mapping(*, stateID: str, districtName: str, df: pd.DataFrame, threshold: int = 65) -> Tuple[str, str]:
     """Standardises district names and codes (based on LGD), provided the standardised state ID
 
     Args:
@@ -54,7 +53,7 @@ def dist_mapping(*, stateID: str, districtName: str, df: pd.DataFrame, threshold
     return (districtName, districtCode)  # returns original name if unmatched
 
 
-def subdist_ulb_mapping(*, districtID: str, subdistName: str, df: pd.DataFrame, threshold: int = 65, childType: Union[str, list, None] = None) -> tuple:
+def subdist_ulb_mapping(*, districtID: str, subdistName: str, df: pd.DataFrame, threshold: int = 65, childType: Union[str, list, None] = None) -> Tuple[str, str]:
     """Standardises subdistrict/ulb names and codes (based on LGD), provided the standardised district ID
 
     Args:
@@ -118,7 +117,7 @@ def subdist_ulb_mapping(*, districtID: str, subdistName: str, df: pd.DataFrame, 
         return (subdistName, "admin_0")  # returns original name if unmatched
 
 
-def village_ward_mapping(*, subdistID: str, villageName: str, df: pd.DataFrame, threshold: int = 95) -> tuple:
+def village_ward_mapping(*, subdistID: str, villageName: str, df: pd.DataFrame, threshold: int = 95) -> Tuple[str, str]:
     """Standardises village names and codes (based on LGD), provided the standardised district ID
 
     Args:
@@ -145,7 +144,7 @@ def village_ward_mapping(*, subdistID: str, villageName: str, df: pd.DataFrame, 
         return (villageName, "admin_0")  # returns original name if unmatched
 
 
-def get_api_key(*, encrypted_file_path: str = "~/config.enc"):
+def get_api_key(*, encrypted_file_path: str = "~/config.enc") -> str:
     """Retrieves API Key stored in an openssl pbkdf2 encrypted file"
 
     Args:
@@ -166,7 +165,7 @@ def get_api_key(*, encrypted_file_path: str = "~/config.enc"):
     return MyAPI
 
 
-def geocode(*, addresses: Union[pd.Series, str], batch_size: int = 0, API_key: str):
+def geocode(*, addresses: Union[pd.Series, str], batch_size: int = 0, API_key: str) -> pd.Series:
     """Uses Google Maps API to convert addresses to lat, long positions
 
     Args:
@@ -256,7 +255,7 @@ def geocode(*, addresses: Union[pd.Series, str], batch_size: int = 0, API_key: s
             return all_geocoded_results
 
 
-def check_bounds(*, lat: Union[float, pd.Series], long: Union[float, pd.Series], regionID: str, geojson_dir: str = "data/GS0012DS0051-Shapefiles_India/geojsons/individual/"):  # noqa: E501
+def check_bounds(*, lat: Union[float, pd.Series], long: Union[float, pd.Series], regionID: str, geojson_dir: str = "data/GS0012DS0051-Shapefiles_India/geojsons/individual/") -> Union[pd.Series, tuple]: # noqa: E501
     """
     Returns lat, long positions if within a polygon, else returns Null
 
@@ -310,7 +309,17 @@ def check_bounds(*, lat: Union[float, pd.Series], long: Union[float, pd.Series],
 
     return result.iloc[0] if len(result) == 1 else result
 
-def clean_lat_long(*, lat: Union[str, float], long: Union[str, float]) -> tuple:
+def clean_lat_long(*, lat: Union[str, float], long: Union[str, float]) -> Tuple[Union[float, pd.NA], Union[float, pd.NA]]:
+    """Validates lat long positions after removing extraneous elements and adding floating point where missing
+
+    Args:
+        lat (Union[str, float]): latitude
+        long (Union[str, float]): longitude
+
+    Returns:
+        Tuple[Union[float, pd.NA], Union[float, pd.NA]]: Lat, long
+    """
+
     # If lat or long is pd.NA, return pd.NA for both values
     if pd.isna(lat) or pd.isna(long):
         return (pd.NA, pd.NA)

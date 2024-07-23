@@ -16,8 +16,8 @@ from epipipeline.standardise import (
     standardise_test_result,
     validate_age,
 )
-from epipipeline.standardise.dates import check_date_to_today, fix_symptom_date, fix_two_dates, fix_year, string_clean_dates
-from epipipeline.standardise.gis import subdist_ulb_mapping, village_ward_mapping
+from epipipeline.standardise.dates import (extract_symptom_date, string_clean_dates, fix_year_for_ll, fix_two_dates, check_date_bounds)
+from epipipeline.standardise.gis import (subdist_ulb_mapping, village_ward_mapping)
 
 # Set up logging
 logger = logging.getLogger("epipipeline.standardise.dengue.karnataka")
@@ -110,8 +110,8 @@ def standardise_ka_linelist_v3(*,
         datevars = ["event.symptomOnsetDate",
                     "event.test.sampleCollectionDate", "event.test.resultDate"]
 
-        # Fix symptom date where number of days is entered instead of date
-        new_dates = df.apply(lambda x: fix_symptom_date(
+        # Extract symptom date where number of days is entered instead of date
+        new_dates = df.apply(lambda x: extract_symptom_date(
             symptomDate=x["event.symptomOnsetDate"], resultDate=x["event.test.resultDate"]), axis=1)
         df["event.symptomOnsetDate"], df["event.test.resultDate"] = zip(
             *new_dates)
@@ -119,7 +119,7 @@ def standardise_ka_linelist_v3(*,
         # Then, string clean dates and fix year errors to current/previous (if dec)/next (if jan)
         for var in datevars:
             df[var] = df[var].apply(lambda x: string_clean_dates(Date=x))
-            df[var] = df[var].apply(lambda x: fix_year(Date=x))
+            df[var] = df[var].apply(lambda x: fix_year_for_ll(Date=x))
 
         # Then, carry out year and date logical checks and fixes on symptom and sample date first
         result = df.apply(lambda x: fix_two_dates(
@@ -139,9 +139,9 @@ def standardise_ka_linelist_v3(*,
         df["event.symptomOnsetDate"], df["event.test.sampleCollectionDate"] = zip(
             *result)
 
-        # Coerce dates to <= current date, and format dates to ISO format
+        # Coerce dates to >= min date or <= current date, and format dates to ISO format
         for var in datevars:
-            df[var] = df.apply(lambda x, var=var : check_date_to_today(
+            df[var] = df.apply(lambda x, var=var : check_date_bounds(
                 Date=x[var], districtName=x["location.admin2.name"], districtID=x["location.admin2.ID"]), axis=1)
             df[var] = pd.to_datetime(df[var]).dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 

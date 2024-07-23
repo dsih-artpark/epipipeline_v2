@@ -123,9 +123,9 @@ def standardise_test_result(*, result:str) -> str:
         str: Negative, Positive or Unknown
     """
     if isinstance(result, str) or isinstance(result, int):
-        if re.search(r"-ve|Neg|Negative|No|0", str(result), re.IGNORECASE):
+        if re.search(r"-ve|Neg|Negative|No|N|0", str(result), re.IGNORECASE):
             return "Negative"
-        elif re.search(r"NS1|IgM|D|Yes|\+ve|Pos|Positive|1", str(result), re.IGNORECASE):
+        elif re.search(r"NS1|IgM|D|Yes|Y|\+ve|Pos|Positive|1", str(result), re.IGNORECASE):
             return "Positive"
     return "Unknown"
 

@@ -97,14 +97,9 @@ def subdist_ulb_mapping(*, districtID: str, subdistName: str, df: pd.DataFrame, 
         else:
             raise TypeError("Child Type must be a string or list of strings")
         
-        subdistricts = df[(df["parentID"] == districtID) & (df["regionID"].str.startswith(tuple(childType)))]
+        subdistricts = df[(df["parentID"] == districtID) & (df["regionID"].str.startswith(tuple(childType)))]["regionName"].to_list()
     else:
-        subdistricts = df[(df["parentID"] == districtID)]
-
-    if subdistricts.empty:
-        raise ValueError(f"No subdistricts returned for {districtID}")
-    else:
-        subdistricts = subdistricts["regionName"].to_list()
+        subdistricts = df[(df["parentID"] == districtID)]["regionName"].to_list()
         
     match = process.extractOne(
         subdistName, subdistricts, score_cutoff=threshold)

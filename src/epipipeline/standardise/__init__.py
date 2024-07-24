@@ -105,9 +105,9 @@ def standardise_gender(*, gender:str) -> str:
 
     gender = str(gender).title().lstrip().rstrip()
 
-    if re.search(r'[fwgFWG]', gender):
+    if re.search(r'[fwg]', gender, re.IGNORECASE):
         return "Female"
-    elif re.search(r'^[mbMB]', gender):
+    elif re.search(r'^[mb]|hm', gender, re.IGNORECASE):
         return "Male"
     else:
         return "Unknown"
@@ -123,9 +123,9 @@ def standardise_test_result(*, result:str) -> str:
         str: Negative, Positive or Unknown
     """
     if isinstance(result, str) or isinstance(result, int):
-        if re.search(r"-ve|Neg|Negative|No|N|0", str(result), re.IGNORECASE):
+        if re.search(r"-ve|Neg|No|\bN\b|0", str(result), re.IGNORECASE):
             return "Negative"
-        elif re.search(r"NS1|IgM|D|Yes|Y|\+ve|Pos|Positive|1", str(result), re.IGNORECASE):
+        elif re.search(r"NS1|IgM|\bD\b|Yes|\bY\b|\+ve|Pos|1|Dengue", str(result), re.IGNORECASE):
             return "Positive"
     return "Unknown"
 
@@ -180,7 +180,7 @@ def public_private(*, s:str) -> str:
     if isinstance(s, str):
         if re.search(r"Private|Pvt", s, re.IGNORECASE):
             return "Private"
-        elif re.search(r"Public|Pub|Govt|Government", s, re.IGNORECASE):
+        elif re.search(r"Pub|Govt|Government", s, re.IGNORECASE):
             return "Public"
         else:
             return "Unknown"
@@ -197,9 +197,9 @@ def active_passive(*, s:str) -> str:
     """
 
     if isinstance(s, str):
-        if re.search(r"Acti?v?e?|A", s, re.IGNORECASE):
+        if re.search(r"Acti?v?e?|\bA\b", s, re.IGNORECASE):
             return "Active"
-        elif re.search(r"Pas?s?i?v?e?|P", s, re.IGNORECASE):
+        elif re.search(r"Pas?s?i?v?e?|\bP\b", s, re.IGNORECASE):
             return "Passive"
         else:
             return "Unknown"
@@ -216,9 +216,42 @@ def rural_urban(*, s:str) -> str:
     """
 
     if isinstance(s, str):
-        if re.search(r"Rura?l?|R", s, re.IGNORECASE):
+        if re.search(r"Rura?l?|\bR\b", s, re.IGNORECASE):
             return "Rural"
-        elif re.search(r"Urba?n?|U", s, re.IGNORECASE):
+        elif re.search(r"Urba?n?|\bU\b", s, re.IGNORECASE):
             return "Urban"
         else:
             return "Unknown"
+
+def event_death(*, s:str) -> str:
+    """Standardises event death to boolean
+
+    Args:
+        s (str): Whether death occured
+
+    Returns:
+        bool: True/False or pd.NA
+    """
+    if isinstance(s, str) or isinstance(s, int):
+        if re.search(r"travel|history", str(s), re.IGNORECASE):
+            return pd.NA
+        elif re.search(r"\bNo\b|\bN\b|0", str(s), re.IGNORECASE):
+            return False
+        elif re.search(r"Death|\bD\b|Yes|\bY\b|1", str(s), re.IGNORECASE):
+            return True
+    return pd.NA
+
+def extract_gender_age(*, gender: str, age: Union[str, float]) -> Tuple[str, str]:
+    """Returns gender and age values that are swapped
+
+    Args:
+        gender (str): gender field
+        age (Union[str, float]): age field
+
+    Returns:
+        Tuple[str, str]: gender, age
+    """
+    if re.search(r"[0-9]", str(gender)) and re.search(r"[^0-9]", str(age)):
+        return (age, gender)
+    
+    return (gender, age)

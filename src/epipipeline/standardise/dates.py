@@ -74,16 +74,16 @@ def string_clean_dates(*, Date) -> datetime.datetime:
         return pd.NaT
 
 
-
-def fix_year_for_ll(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = None) -> datetime.datetime:
+def fix_year_for_ll(*, Date: datetime.datetime, Year: Optional[Union[datetime.datetime, int, str]] = None, limitYear: bool = None) -> datetime.datetime:
     """Fixes year to current year/previous year where year is not equal to the current year. 
 
     Args:
         Date (datetime.datetime): date variable in datetime format
-        tagDate (datetime.datetime), optional:  max date of cases - set to current date by default
+        Year (datetime.datetime, int, str), optional:  year of case
+        limitYear (bool): whether to limit to Year inputted or to consider previous year entries
 
     Returns:
-        tuple: clean date with year = current/next/previous
+        datetime.datetime: clean date with year fix
     """
 
     if pd.isna(Date):
@@ -94,34 +94,33 @@ def fix_year_for_ll(*, Date: datetime.datetime, tagDate: Optional[datetime.datet
     except AttributeError as e:
         raise(f"{e}. Date entered is invalid")
 
-    if tagDate:
+    if Year:
         try:
-            tagDate = pd.to_datetime(tagDate)
+            current_year = pd.to_datetime(Year).year
+            assert current_year <= datetime.datetime.today().year, "A post-dated year has been entered. Re-enter a valid year."
         except Exception as e:
-            raise(f"{e}. Date entered is invalid")
-        current_year = tagDate.year
+            raise(f"{e}. Year entered is invalid.")
     else:
         current_year = datetime.datetime.today().year
 
-    # if first date is not null, and year is not current year
-    if Date.year != current_year:
-        # set year to current year if month is not Dec
-        if Date.month != 12:
-            Date = datetime.datetime(day=Date.day, month=Date.month, year=current_year)
+    # if year is not current year
+    if Date.year!=current_year:
+        # set year to current year if limitYear = True or month is not Dec
+        if (Date.month != 12) or (limitYear):
+            newDate = datetime.datetime(day=Date.day, month=Date.month, year=current_year)
+            return newDate
         else: # december entries can be current/previous year
             # year can be previous year
             year_diff = (current_year - Date.year)
-            # if post-dated, set to current year
-            if year_diff < 0:
-                Date = datetime.datetime(day=Date.day, month=Date.month, year=current_year)
-            # if year is beyond 1 year prior, set to current year
-            elif year_diff >1:
-                Date = datetime.datetime(day=Date.day, month=Date.month, year=current_year)
-            # remaining dates are from dec of previous year, so we retain them
-            else:
-                pass
+            # if post-dated or beyond 1 year prior to the current year, force year to current year
+            if (year_diff < 0) or (year_diff > 1):
+                newDate = datetime.datetime(day=Date.day, month=Date.month, year=current_year)
+                return newDate
+            else: # leave previous year's case as is
+                return Date
+    else:
+        return Date
 
-    return (Date)
 
 def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, minDate: Optional[datetime.datetime] = None, tagDate: Optional[datetime.datetime] = None, days_diff: int = 30) -> Tuple[datetime.datetime, datetime.datetime]:
     """Fixes invalid year entries, and attempts to fix logical check on symptom date>=sample date>=result date through date swapping if delta is >=30 or days_diff specified

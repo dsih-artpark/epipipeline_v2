@@ -88,3 +88,50 @@ def extract_test_method_without_result(*, test_method: str) -> Tuple[str, str]:
         if re.search(r"IgM", str(test_method), re.IGNORECASE):
             test2 = "Positive"
         return (test1, test2)
+
+def extract_contact(*, address: str) -> tuple:
+    """Extracts mobile number from the address/name fields and strips the name/address from the mobile number field
+
+    Args:
+        address (str): Name & Address or Address field
+
+    Returns:
+        tuple: DataFrame series of address & mobile number
+    """
+    if pd.isna(address):
+        return address
+    
+    mobile_present = re.search(r"(9?1?\d{10})", str(address))
+
+    if (mobile_present):
+        mobile_number = mobile_present.group(1)
+        address = re.sub(r"9?1?\d{10}", "", str(address))
+        return (address, mobile_number)
+    else:
+        return (address, pd.NA)
+
+
+def separate_age_gender(*, agegender: str) -> tuple:
+    """Extracts age and gender from a slash-separated string
+
+    Args:
+        agegender (str): age/gender field
+
+    Returns:
+        tuple: age, gender as strings
+    """
+
+    if not pd.isna(agegender):
+        match = re.search(
+            r"([0-9]+[YyMm]?[A-Za-z]*)\/([MmFfGgBbWw]?[A-Za-z]*)", str(agegender))
+        if match:
+            if match.group(1) and match.group(2):
+                return (match.group(1), match.group(2))
+            elif match.group(1):
+                return (match.group(1), pd.NA)
+            else:
+                return (match.group(2), pd.NA)
+        else:
+            return (pd.NA, pd.NA)
+    else:
+        return (pd.NA, pd.NA)

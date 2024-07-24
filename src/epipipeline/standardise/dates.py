@@ -56,7 +56,6 @@ def string_clean_dates(*, Date) -> datetime.datetime:
         return pd.NaT
     
     Date = re.sub(r"\-\-", "-", str(Date))
-    Date = re.sub(r"\.","/", str(Date))
 
     formats = ["%d/%m/%y", "%m/%d/%y", "%d/%m/%Y", "%m/%d/%Y"]
 
@@ -64,19 +63,11 @@ def string_clean_dates(*, Date) -> datetime.datetime:
     for fmt in formats:
         try:
             parsed_date = pd.to_datetime(str(Date), format=fmt)
-            
-            # Assuming two-digit year 24 is 2024
-            if parsed_date.year < 100:
-                if parsed_date.year >= 20:
-                    parsed_date = parsed_date.replace(year=2000 + parsed_date.year)
-                else:
-                    parsed_date = parsed_date.replace(year=1900 + parsed_date.year)
-            
             return parsed_date
         except ValueError:
             continue
             
-    # Try parsing without any format, if value error, nullify
+    # If formats above don't work, try parsing with mixed formats - if value error, nullify
     try:
         return pd.to_datetime(Date, format="mixed")
     except ValueError:

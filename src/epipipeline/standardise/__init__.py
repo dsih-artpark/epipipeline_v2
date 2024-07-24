@@ -102,12 +102,12 @@ def standardise_gender(*, gender:str) -> str:
     Returns:
         str: Female, Male, Unknown
     """
-
-    gender = str(gender).title().lstrip().rstrip()
-
-    if re.search(r'[fwg]', gender, re.IGNORECASE):
+    if pd.isna(gender):
+        return "Unknown"
+    
+    if re.search(r'[fwg]', str(gender), re.IGNORECASE):
         return "Female"
-    elif re.search(r'^[mb]|hm', gender, re.IGNORECASE):
+    elif re.search(r'^[mb]|hm',str(gender), re.IGNORECASE):
         return "Male"
     else:
         return "Unknown"
@@ -122,12 +122,14 @@ def standardise_test_result(*, result:str) -> str:
     Returns:
         str: Negative, Positive or Unknown
     """
-    if isinstance(result, str) or isinstance(result, int):
-        if re.search(r"-ve|Neg|No|\bN\b|0", str(result), re.IGNORECASE):
-            return "Negative"
-        elif re.search(r"NS1|IgM|\bD\b|Yes|\bY\b|\+ve|Pos|1|Dengue", str(result), re.IGNORECASE):
-            return "Positive"
-    return "Unknown"
+    if pd.isna(result):
+        return "Unknown"
+    if re.search(r"-ve|Neg|No|\bN\b|0", str(result), re.IGNORECASE):
+        return "Negative"
+    elif re.search(r"NS1|IgM|\bD\b|Yes|\bY\b|\+ve|Pos|1|Dengue", str(result), re.IGNORECASE):
+        return "Positive"
+    else:
+        return "Unknown"
 
 
 def generate_test_count(*, test1:str, test2:str) -> int:
@@ -159,13 +161,16 @@ def opd_ipd(*, s:str) -> str:
         str: standardised value for IPD or OPD
     """
 
-    if isinstance(s, str):
-        if re.search(r"IPD?", s, re.IGNORECASE):
-            return "IPD"
-        elif re.search(r"OPD?", s, re.IGNORECASE):
+    if pd.isna(s):
+        return "Unknown"
+    
+    if re.search(r"IPD?", str(s), re.IGNORECASE):
+        return "IPD"
+    elif re.search(r"OPD?", str(s), re.IGNORECASE):
             return "OPD"
-        else:
-            return "Unknown"
+    else:
+        return "Unknown"
+
 
 def public_private(*, s:str) -> str:
     """Standardises entries for private or public
@@ -176,14 +181,15 @@ def public_private(*, s:str) -> str:
     Returns:
         str: standardised value for Private or Public
     """
-
-    if isinstance(s, str):
-        if re.search(r"Private|Pvt", s, re.IGNORECASE):
-            return "Private"
-        elif re.search(r"Pub|Govt|Government", s, re.IGNORECASE):
-            return "Public"
-        else:
-            return "Unknown"
+    if pd.isna(s):
+        return "Unknown"
+    
+    if re.search(r"Private|Pvt", str(s), re.IGNORECASE):
+        return "Private"
+    elif re.search(r"Pub|Govt|Government", str(s), re.IGNORECASE):
+        return "Public"
+    else:
+        return "Unknown"
 
 
 def active_passive(*, s:str) -> str:
@@ -196,13 +202,15 @@ def active_passive(*, s:str) -> str:
         str: standardised value for Active or Passive
     """
 
-    if isinstance(s, str):
-        if re.search(r"Acti?v?e?|\bA\b", s, re.IGNORECASE):
-            return "Active"
-        elif re.search(r"Pas?s?i?v?e?|\bP\b", s, re.IGNORECASE):
-            return "Passive"
-        else:
-            return "Unknown"
+    if pd.isna(s):
+        return "Unknown"
+    
+    if re.search(r"Acti?v?e?|\bA\b", str(s), re.IGNORECASE):
+        return "Active"
+    elif re.search(r"Pas?s?i?v?e?|\bP\b", str(s), re.IGNORECASE):
+        return "Passive"
+    else:
+        return "Unknown"
 
 
 def rural_urban(*, s:str) -> str:
@@ -215,13 +223,15 @@ def rural_urban(*, s:str) -> str:
         str: standardised value for Rural or Urban
     """
 
-    if isinstance(s, str):
-        if re.search(r"Rura?l?|\bR\b", s, re.IGNORECASE):
-            return "Rural"
-        elif re.search(r"Urba?n?|\bU\b", s, re.IGNORECASE):
-            return "Urban"
-        else:
-            return "Unknown"
+    if pd.isna(s):
+        return "Unknown"
+   
+    if re.search(r"Rura?l?|\bR\b", str(s), re.IGNORECASE):
+        return "Rural"
+    elif re.search(r"Urba?n?|\bU\b", str(s), re.IGNORECASE):
+        return "Urban"
+    else:
+        return "Unknown"
 
 def event_death(*, s:str) -> str:
     """Standardises event death to boolean
@@ -232,14 +242,15 @@ def event_death(*, s:str) -> str:
     Returns:
         bool: True/False or pd.NA
     """
-    if isinstance(s, str) or isinstance(s, int):
-        if re.search(r"travel|history", str(s), re.IGNORECASE):
-            return pd.NA
-        elif re.search(r"\bNo\b|\bN\b|0", str(s), re.IGNORECASE):
-            return False
-        elif re.search(r"Death|\bD\b|Yes|\bY\b|1", str(s), re.IGNORECASE):
-            return True
-    return pd.NA
+    if pd.isna(s):
+        return s
+    
+    if re.search(r"\bNo\b|\bN\b|0", str(s), re.IGNORECASE) and not re.search(r"travel|history", str(s), re.IGNORECASE):
+        return False
+    elif re.search(r"Death|\bD\b|Yes|\bY\b|1", str(s), re.IGNORECASE):
+        return True
+    else:
+        return pd.NA
 
 def extract_gender_age(*, gender: str, age: Union[str, float]) -> Tuple[str, str]:
     """Returns gender and age values that are swapped

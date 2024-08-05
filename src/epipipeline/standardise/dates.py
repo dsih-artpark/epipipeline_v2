@@ -74,7 +74,7 @@ def string_clean_dates(*, Date) -> datetime.datetime:
         return pd.NaT
 
 
-def fix_year_for_ll(*, Date: datetime.datetime, Year: Optional[Union[datetime.datetime, int, str]] = None, limitYear: bool = None) -> datetime.datetime:
+def fix_year_for_ll(*, Date: datetime.datetime, Year: Optional[Union[datetime.datetime, str]] = None, limitYear: bool = None) -> datetime.datetime:
     """Fixes year to current year/previous year where year is not equal to the current year. 
 
     Args:
@@ -95,6 +95,7 @@ def fix_year_for_ll(*, Date: datetime.datetime, Year: Optional[Union[datetime.da
         raise(f"{e}. Date entered is invalid")
 
     if Year:
+        Year=str(Year)
         try:
             current_year = pd.to_datetime(Year).year
             assert current_year <= datetime.datetime.today().year, "A post-dated year has been entered. Re-enter a valid year."

@@ -175,15 +175,32 @@ def standardise_ka_linelist_v3(*,
         # Extract admin hierarchy from admin3.ID - ULB, REVENUE, admin_0 (if missing ulb/subdistrict LGD code)
         df["location.admin.hierarchy"] = df["location.admin3.ID"].apply(lambda x: "ULB" if x.startswith("ulb") else ("Revenue" if x.startswith("subdistrict") else "admin_0"))  # noqa: E501
 
+        # Generate admin coarseness
+        df["location.admin.coarseness"] = df["location.admin5.ID"].fillna(df["location.admin4.ID"]).fillna(df["location.admin3.ID"]).fillna(df["location.admin2.ID"]).fillna(df["location.admin1.ID"]).fillna(df["location.country.ID"]).str.split("_").str.get(0)
+
+        # Fillna for geovars
+        for vars in ["location.admin2.ID", "location.admin3.ID", "location.admin4.ID", "location.admin5.ID"]:
+            df[vars]=df[vars].fillna("admin_0")
+
         # Drop duplicates across all vars after standardisation
         df.drop_duplicates(inplace=True)
-
-        # Generate recordID after standardisation and de-duplication
-        df["metadata.recordID"] = [uuid.uuid4() for i in range(len(df))]
 
         # Drop empty rows for key vars
         df = df.dropna(subset=["metadata.nameAddress", "metadata.primaryDate",
                        "demographics.age", "demographics.gender"], thresh=2)
+
+        # Generate recordID after standardisation and de-duplication
+        df["metadata.recordID"] = [uuid.uuid4() for i in range(len(df))]
+
+        # generate patient UUIDs
+        df["age_limit"] = df["demographics.age"].apply(lambda x: f"{x-1}-{x+1}")
+        df["metadata.patientID"] = df.groupby(by=['metadata.name', 'metadata.contact', 'demographics.gender', 'age_limit', 'metadata.address']).ngroup().apply(lambda x: uuid.uuid4())
+        
+        duplicate_patients = len(df[df.duplicated(subset="metadata.patientID")])
+
+        if duplicate_patients > 0:
+            logger.warning(f"There are {duplicate_patients} duplicate patients")
+
 
         # Sort headers after removing PII vars
 

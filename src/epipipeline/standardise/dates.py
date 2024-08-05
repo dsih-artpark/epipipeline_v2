@@ -248,8 +248,7 @@ def fix_two_dates(*, earlyDate: datetime.datetime, lateDate: datetime.datetime, 
     return (earlyDate, lateDate)
 
 
-def check_date_bounds(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = None, minDate: Optional[datetime.datetime] = None, districtName: Optional[str] = None,
-                        districtID: Optional[str] = None) -> datetime.datetime:
+def check_date_bounds(*, Date: datetime.datetime, tagDate: Optional[datetime.datetime] = None, minDate: Optional[datetime.datetime] = None, districtName: Optional[str] = None) -> datetime.datetime:
     """Nullifies dates that are less than min date provided and greater than max date provided/current date
 
     Args:
@@ -293,10 +292,10 @@ def check_date_bounds(*, Date: datetime.datetime, tagDate: Optional[datetime.dat
             return pd.NaT
 
     if Date > tagDate: # check upper bound
-        if districtName and districtID:
-            logger.warning(f"Found a date greater than today in {districtName} ({districtID}). Removing...")
+        if districtName:
+            logger.warning(f"Found a date {Date} greater than today in {districtName}. Removing...")
         else:
-            logger.warning(f"Found a date greater than today. Removing...")
+            logger.warning(f"Found a date {Date} greater than today. Removing...")
         return pd.NaT
     
     return Date

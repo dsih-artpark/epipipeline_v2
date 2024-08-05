@@ -285,10 +285,10 @@ def check_date_bounds(*, Date: datetime.datetime, tagDate: Optional[datetime.dat
             raise(f"{e}. Date entered is invalid")
 
         if Date < minDate:
-            if districtName and districtID:
-                logger.warning(f"Found a date greater than today in {districtName} ({districtID}). Removing...")
+            if districtName:
+                logger.warning(f"Found a date {Date} lesser than minDate in {districtName}. Removing...")
             else:
-                logger.warning(f"Found a date greater than today. Removing...")
+                logger.warning(f"Found a date {Date} lesser than today. Removing...")
             return pd.NaT
 
     if Date > tagDate: # check upper bound

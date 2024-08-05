@@ -32,8 +32,8 @@ def dist_mapping(*, stateID: str, districtName: str, df: pd.DataFrame, threshold
         tuple: (LGD district name, LGD district code or admin_0 if not matched)
     """
 
-    if stateID=="admin_0" or pd.isna(districtName):
-        return (pd.NA, "admin_0")
+    if pd.isna(stateID) or pd.isna(districtName):
+        return (pd.NA, pd.NA)
 
     districtName = str(districtName).title().strip()
     districtName = re.sub(r"Gulbarga", "Kalaburagi", districtName, flags=re.IGNORECASE)
@@ -49,7 +49,7 @@ def dist_mapping(*, stateID: str, districtName: str, df: pd.DataFrame, threshold
         districtName = match[0]
         districtCode = df[(df["parentID"] == stateID) & (df["regionName"] == districtName)]["regionID"].values[0]
     else:
-        districtCode = "admin_0"
+        districtCode = pd.NA
     return (districtName, districtCode)  # returns original name if unmatched
 
 
@@ -68,8 +68,8 @@ def subdist_ulb_mapping(*, districtID: str, subdistName: str, df: pd.DataFrame, 
     """
 
     # if subdist name is na, return admin_0
-    if districtID=="admin_0" or pd.isna(subdistName):
-        return (pd.NA, "admin_0")
+    if pd.isna(districtID) or pd.isna(subdistName):
+        return (pd.NA, pd.NA)
 
     # string clean subdist name
     subdistName = str(subdistName).title().strip()
@@ -107,9 +107,9 @@ def subdist_ulb_mapping(*, districtID: str, subdistName: str, df: pd.DataFrame, 
         subdistName = match[0]
         subdistCode = df[(df["parentID"] == districtID) & (
             df["regionName"] == subdistName)]["regionID"].values[0]
-        return (subdistName, subdistCode)
     else:
-        return (subdistName, "admin_0")  # returns original name if unmatched
+        subdistCode = pd.NA
+    return (subdistName, subdistCode)  # returns original name if unmatched
 
 
 def village_ward_mapping(*, subdistID: str, villageName: str, df: pd.DataFrame, threshold: int = 95) -> Tuple[str, str]:
@@ -124,8 +124,8 @@ def village_ward_mapping(*, subdistID: str, villageName: str, df: pd.DataFrame, 
     Returns:
         tuple: (LGD village/ward name, LGD village/ward code or admin_0 if not matched)
     """
-    if subdistID=="admin_0" or pd.isna(villageName):
-        return (pd.NA, "admin_0")
+    if pd.isna(subdistID) or pd.isna(villageName):
+        return (pd.NA, pd.NA)
 
     villageName = str(villageName).title().strip()
     villages = df[df["parentID"] == subdistID]["regionName"].to_list()
@@ -134,9 +134,9 @@ def village_ward_mapping(*, subdistID: str, villageName: str, df: pd.DataFrame, 
         villageName = match[0]
         villageCode = df[(df["parentID"] == subdistID) & (
             df["regionName"] == villageName)]["regionID"].values[0]
-        return (villageName, villageCode)
     else:
-        return (villageName, "admin_0")  # returns original name if unmatched
+        villageCode = pd.NA
+        return (villageName, villageCode)  # returns original name if unmatched
 
 
 def get_api_key(*, encrypted_file_path: str = "~/config.enc") -> str:
@@ -349,6 +349,7 @@ def clean_lat_long(*, lat: Union[str, float], long: Union[str, float]) -> Tuple[
             return (pd.NA, pd.NA)
 
     return (lat, long)
+
 
 
 

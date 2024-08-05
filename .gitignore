@@ -146,3 +146,6 @@ dmypy.json
 data/**
 testing.py
 _src/**
+
+# Ignore credentials JSON file
+credentials.json

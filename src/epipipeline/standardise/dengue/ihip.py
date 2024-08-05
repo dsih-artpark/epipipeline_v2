@@ -175,6 +175,9 @@ def standardise_ihip_v2(*, preprocessed_data_dict: dict,
         df["event.test.test1.result"] = df["event.test.test1.result"].apply(lambda x: standardise_test_result(result=x))
         df["event.test.test2.result"] = df["event.test.test2.result"].apply(lambda x: standardise_test_result(result=x))
 
+        # Generate test count - [0,1,2]
+        df["event.test.numberOfTests"] = df.apply(lambda x: generate_test_count(test1=x["event.test.test1.result"], test2=x["event.test.test2.result"]), axis=1)  # noqa: E501
+
         # Standardise case variables - OPD, IPD
         df["case.opdOrIpd"] = df["case.opdOrIpd"].apply(lambda x: opd_ipd(s=x))
 
@@ -250,14 +253,11 @@ def standardise_ihip_v2(*, preprocessed_data_dict: dict,
         # filter/order vars
         # remove pii vars
 
-        # Generate test count - [0,1,2]
-        df["event.test.numberOfTests"] = df.groupby(by="metadata.patientID").ngroup().apply(lambda x: generate_test_count(test1=x["event.test.test1.result"], test2=x["event.test.test2.result"]), axis=1)  # noqa: E501
+        headers = [col for col in df.columns.to_list(
+        ) if data_dictionary[col]["access"]]
 
-        df=df[data_dictionary.keys()]
-
-        for col in data_dictionary.keys():
-            if not data_dictionary[col]["access"]:
-                df=df.drop(col)
+        headers = sorted(headers, key=list(data_dictionary.keys()).index)
+        df = df[headers]
 
         logger.debug(f"{districtName} standardised")
         

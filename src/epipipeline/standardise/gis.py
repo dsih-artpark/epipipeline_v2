@@ -136,7 +136,7 @@ def village_ward_mapping(*, subdistID: str, villageName: str, df: pd.DataFrame, 
             df["regionName"] == villageName)]["regionID"].values[0]
     else:
         villageCode = pd.NA
-        return (villageName, villageCode)  # returns original name if unmatched
+    return (villageName, villageCode)  # returns original name if unmatched
 
 
 def get_api_key(*, encrypted_file_path: str = "~/config.enc") -> str:

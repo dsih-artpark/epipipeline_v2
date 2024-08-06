@@ -112,8 +112,8 @@ def standardise_ka_linelist_v3(*,
 
         # Extract symptom date where number of days is entered instead of date
         new_dates = df.apply(lambda x: extract_symptom_date(
-            symptomDate=x["event.symptomOnsetDate"], resultDate=x["event.test.resultDate"]), axis=1)
-        df["event.symptomOnsetDate"], df["event.test.resultDate"] = zip(
+            symptomDate=x["event.symptomOnsetDate"], sampleDate=x["event.test.sampleCollectionDate"]), axis=1)
+        df["event.symptomOnsetDate"], df["event.test.sampleCollectionDate"] = zip(
             *new_dates)
 
         # Then, string clean dates and fix year errors to current/previous (if dec)/next (if jan)

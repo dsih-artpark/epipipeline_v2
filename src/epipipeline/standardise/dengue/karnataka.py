@@ -143,7 +143,7 @@ def standardise_ka_linelist_v3(*,
         for var in datevars:
             df[var] = df.apply(lambda x, var=var : check_date_bounds(
                 Date=x[var], districtName=x["location.admin2.name"], districtID=x["location.admin2.ID"]), axis=1)
-            df[var] = pd.to_datetime(df[var]).dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+            df[var] = df[var].dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
         # Setting primary date - symptom date > sample date > result date
         df["metadata.primaryDate"] = df["event.symptomOnsetDate"].fillna(

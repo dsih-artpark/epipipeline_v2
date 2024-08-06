@@ -33,7 +33,7 @@ def extract_symptom_date(*, symptomDate: str, sampleDate: str) -> Tuple[datetime
         if match:
             if match.group(1):
                 try:
-                    symptomDate = resultDate - pd.to_timedelta(int(match.group(1)), unit='d')
+                    symptomDate = sampleDate - pd.to_timedelta(int(match.group(1)), unit='d')
                 except ValueError:
                     return (pd.NaT, sampleDate)
             else:

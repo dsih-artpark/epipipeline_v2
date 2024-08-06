@@ -12,34 +12,40 @@ logger = logging.getLogger("epipipeline.standardise.dengue.karnataka")
 logging.captureWarnings(True)
 
 
-def extract_symptom_date(*, symptomDate: str, resultDate: str) -> Tuple[datetime.datetime,datetime.datetime]:
-    """If symptom date is in number of days, extracts number and converts to date as result date - number
+def extract_symptom_date(*, symptomDate: str, sampleDate: str) -> Tuple[datetime.datetime,datetime.datetime]:
+    """If symptom date is in number of days, extracts number and converts to date as sample date - number
 
     Args:
         symptomDate (str): symptom date as date string/integer
-        resultDate (str): result date as date string
+        sampleDate (str): sample/result date as date string
     """
 
-    if isinstance(symptomDate, str) and (isinstance(resultDate, str) or isinstance(resultDate, datetime.datetime)):
-        match = re.search(r".*(\d+)\s?(days?)", symptomDate, re.IGNORECASE)
+    # make sampleDate into datetime if not already datetime object
+    if not isinstance(sampleDate, datetime.datetime):
+        try:
+            sampleDate = pd.to_datetime(sampleDate)
+        except ValueError:
+            return (pd.NaT, pd.NaT)
+
+    # if symptom date is not datetime object, looks for int days - nullify symptom date if pattern not found
+    if not isinstance(symptomDate, datetime.datetime):
+        match = re.search(r".*(\d+)\s?(day)?", str(symptomDate), re.IGNORECASE)
         if match:
             if match.group(1):
                 try:
-                    resultDate = pd.to_datetime(resultDate)
-                    symptomDate = resultDate - \
-                        pd.to_timedelta(int(match.group(1)), unit='d')
+                    symptomDate = resultDate - pd.to_timedelta(int(match.group(1)), unit='d')
                 except ValueError:
-                    return (pd.NaT, pd.NaT)
+                    return (pd.NaT, sampleDate)
             else:
-                try:
-                    resultDate = pd.to_datetime(resultDate)
-                    return (pd.NaT, resultDate)
-                except ValueError:
-                    return (pd.NaT, pd.NaT)
-        else:
-            return (symptomDate, resultDate)
-
-    return (symptomDate, resultDate)
+                return (pd.NaT, sampleDate)
+        else: # if pattern not found, try to convert it to datetime object
+            try:
+                symptomDate = pd.to_datetime(symptomDate)
+                return (symptomDate, sampleDate)
+            except:
+                return (pd.NaT, sampleDate)
+    else:
+        return (symptomDate, sampleDate)
 
 
 def string_clean_dates(*, Date) -> datetime.datetime:

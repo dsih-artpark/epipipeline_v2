@@ -44,8 +44,7 @@ def extract_symptom_date(*, symptomDate: str, sampleDate: str) -> Tuple[datetime
                 return (symptomDate, sampleDate)
             except:
                 return (pd.NaT, sampleDate)
-    else:
-        return (symptomDate, sampleDate)
+    return (symptomDate, sampleDate)
 
 
 def string_clean_dates(*, Date) -> datetime.datetime:

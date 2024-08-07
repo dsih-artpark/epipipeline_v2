@@ -6,7 +6,7 @@ import pandas as pd
 from dateutil.parser import parse
 
 # Set up logging
-logger = logging.getLogger("epipipeline.standardise.dengue.karnataka")
+logger = logging.getLogger("epipipeline.standardise")
 
 # Capture warnings and redirect them to the logging system
 logging.captureWarnings(True)

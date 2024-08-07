@@ -37,7 +37,7 @@ for file in os.listdir(f"data/{pp_csvs}"):
 
     ## result date - find out about cycle of dates 
     df["event.test.resultDate"]=df["event.test.resultDate"].apply(lambda x: string_clean_dates(Date=x))
-    df["event.test.resultDate"]=df["event.test.resultDate"].dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+    df["event.test.resultDate"]=df["event.test.resultDate"].apply(lambda x: x.isoformat())
     df["metadata.primaryDate"]=df["event.test.resultDate"]
 
     # Extract gender, age - values are swapped

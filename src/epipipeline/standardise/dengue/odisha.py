@@ -95,6 +95,9 @@ for file in os.listdir(f"data/{pp_csvs}"):
         res=df.apply(lambda x: village_ward_mapping(subdistID=x["location.admin3.ID"], villageName=x["location.admin5.name"], df=regions_df), axis=1)
         df["location.admin5.name"], df["location.admin5.ID"]= zip(*res)
 
+        # admin hierarchy
+        df["location.admin.hierarchy"] = df["location.admin3.ID"].apply(lambda x: "admin_0" if pd.isnull(x) else ("Revenue" if x.startswith("subdistrict") else ("ULB" if x.startswith("ulb") else "admin_0")))  # noqa: E501
+
         # admin coarseness
         df["location.admin.coarseness"]=df["location.admin5.ID"].fillna(df["location.admin3.ID"]).fillna(df["location.admin2.ID"]).fillna(df["location.admin1.ID"]).str.split("_").str.get(0)
 
@@ -103,9 +106,6 @@ for file in os.listdir(f"data/{pp_csvs}"):
 
         for vars in L:
             df[vars]=df[vars].fillna("admin_0")
-
-        # admin hierarchy
-        df["location.admin.hierarchy"] = df["location.admin3.ID"].apply(lambda x: "ULB" if x.startswith("ulb") else ("Revenue" if x.startswith("subdistrict") else "admin_0"))  # noqa: E501
 
         # filter empty rows
         df=df.dropna(how="all", axis=0)

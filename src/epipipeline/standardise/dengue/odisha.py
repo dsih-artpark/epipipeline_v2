@@ -120,9 +120,9 @@ for file in os.listdir(f"data/{pp_csvs}"):
         df=df[data_dictionary.keys()]
 
         # filter pii vars
-        for var in data_dictionary.keys():
-            if not data_dictionary[var]["access"]:
-                df=df.drop(columns=var)
+        headers = [col for col in df.columns if col in data_dictionary and data_dictionary[col]["access"]]
+        headers = sorted(headers, key=list(data_dictionary.keys()).index)
+        df = df[headers]
 
         # export current file
         standardised_dict[file] = df

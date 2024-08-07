@@ -6,7 +6,7 @@ import pandas as pd
 from dateutil.parser import parse
 
 # Set up logging
-logger = logging.getLogger("epipipeline.standardise")
+logger = logging.getLogger("epipipeline.standardise.dates")
 
 # Capture warnings and redirect them to the logging system
 logging.captureWarnings(True)

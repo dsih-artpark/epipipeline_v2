@@ -1,9 +1,16 @@
 import re
 import pandas as pd
 from typing import Union, Tuple
+import logging
+
+# Set up logging
+logger = logging.getLogger("epipipeline.standardise")
+
+# Capture warnings and redirect them to the logging system
+logging.captureWarnings(True)
 
 
-def clean_strings(*, s:str) -> str:
+def clean_strings(*, s:str, case: bool = True, case_type: str = "title") -> str:
     """Standardises string entries
 
     Args:
@@ -19,14 +26,23 @@ def clean_strings(*, s:str) -> str:
     s = s.replace("\n"," ")
     s = re.sub(r'[^a-zA-Z0-9]', ' ', s)
     s = re.sub(r' {2,}', ' ', s)
-    s = s.strip().title()
+    s = s.strip()
 
+    if case:
+        if re.search(r"lower", str(case_type), re.IGNORECASE):
+            s = s.lower()
+        elif re.search(r"upper", str(case_type), re.IGNORECASE):
+            s = s.upper()
+        elif re.search(r"title|proper", str(case_type), re.IGNORECASE):
+            s = s.title()
+        else:
+            logger.warning("Case type must be lower, upper or title. Setting to default: title case")
+            s = s.title()
+    
     if s == '' or s == ' ' or s == 'Nan':
         return pd.NA
     else:
         return s
-            
-
 
 def standardise_age(*, age:str) -> float:
     """Extracts year and month from string age entries

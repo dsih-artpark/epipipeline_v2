@@ -79,7 +79,7 @@ def string_clean_dates(*, Date) -> datetime.datetime:
         return pd.NaT
 
 
-def fix_year_for_ll(*, Date: datetime.datetime, Year: Optional[Union[datetime.datetime, str]] = None, limitYear: bool = None) -> datetime.datetime:
+def fix_year_for_ll(*, Date: datetime.datetime, Year: Optional[Union[datetime.datetime, str]] = None, limitYear: bool = False) -> datetime.datetime:
     """Fixes year to current year/previous year where year is not equal to the current year. 
 
     Args:

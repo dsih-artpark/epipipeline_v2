@@ -41,11 +41,11 @@ def dist_mapping(*, stateID: str, districtName: str, df: pd.DataFrame, threshold
         return (pd.NA, pd.NA)
         
     districtName = re.sub(r"Gulbarga", "Kalaburagi", districtName, flags=re.IGNORECASE)
-    districtName = re.sub(r"\(?\sU\)?$", " Urban", districtName, flags=re.IGNORECASE)
-    districtName = re.sub(r"\(?\sR\)?$", " Rural", districtName, flags=re.IGNORECASE)
+    districtName = re.sub(r"\s\(?\s?U\)?$", " Urban", districtName, flags=re.IGNORECASE)
+    districtName = re.sub(r"\s\(?\s?R\)?$", " Rural", districtName, flags=re.IGNORECASE)
     districtName = re.sub(r"Bijapur", "Vijayapura", districtName, flags=re.IGNORECASE)
     districtName = re.sub(r"C[\.\s]*H[\.\s]*Nagara*", "Chamarajanagara", districtName, flags=re.IGNORECASE)
-    districtName = re.sub(r'\b(B[ae]ngal[ou]r[ue](?!\s*Rural)|Bbmp)\b', "Bengaluru Urban", districtName, flags=re.IGNORECASE)
+    districtName = re.sub(r'B[ae]ngal[ou]r[ue]\sCity|Bbmp)\b', "Bengaluru Urban", districtName, flags=re.IGNORECASE)
 
     districts = df[df["parentID"] == stateID]["regionName"].to_list()
     match = process.extractOne(districtName, districts, score_cutoff=threshold)

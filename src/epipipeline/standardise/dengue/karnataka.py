@@ -173,7 +173,7 @@ def standardise_ka_linelist_v3(*,
         df["location.admin5.name"], df["location.admin5.ID"] = zip(*villages)
 
         # Extract admin hierarchy from admin3.ID - ULB, REVENUE, admin_0 (if missing ulb/subdistrict LGD code)
-        df["location.admin.hierarchy"] = df["location.admin3.ID"].apply(lambda x: "ULB" if x.startswith("ulb") else ("Revenue" if x.startswith("subdistrict") else "admin_0"))  # noqa: E501
+        df["location.admin.hierarchy"] = df["location.admin3.ID"].apply(lambda x: "admin_0" if pd.isnull(x) else ("Revenue" if x.startswith("subdistrict") else ("ULB" if x.startswith("ulb") else "admin_0")))  # noqa: E501
 
         # Generate admin coarseness
         df["location.admin.coarseness"] = df["location.admin5.ID"].fillna(df["location.admin4.ID"]).fillna(df["location.admin3.ID"]).fillna(df["location.admin2.ID"]).fillna(df["location.admin1.ID"]).fillna(df["location.country.ID"]).str.split("_").str.get(0)

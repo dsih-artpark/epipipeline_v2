@@ -117,7 +117,7 @@ def standardise_ihip_v2(*, preprocessed_data_dict: dict,
                     min_result_date = pd.to_datetime(str(min_result_date))
                 except ValueError:
                     raise ("Invalid date for min_result_date")
-                df = df[df["event.test.resultDate"]>=min_result_date]]
+                df = df[df["event.test.resultDate"]>=min_result_date]
              else:
                 pass
                  

@@ -29,7 +29,7 @@ def dist_mapping(*, stateID: str, districtName: str, df: pd.DataFrame, threshold
         threshold (int): cut-off for fuzzy matching, default set to 65
 
     Returns:
-        tuple: (LGD district name, LGD district code or admin_0 if not matched)
+        tuple: (LGD district name, LGD district code)
     """
 
     if pd.isna(stateID) or pd.isna(districtName):
@@ -68,7 +68,7 @@ def subdist_ulb_mapping(*, districtID: str, subdistName: str, df: pd.DataFrame, 
         childType (Union[str, list, None], optional): Specify the type(s) of children (subdistrict/ulb) to consider. Defaults to None.
 
     Returns:
-        tuple: (LGD subdistrict/ulb name, LGD subdistrict/ulb code or admin_0 if not matched)
+        tuple: (LGD subdistrict/ulb name, LGD subdistrict/ulb code)
     """
 
     # if subdist name is na, return admin_0
@@ -130,7 +130,7 @@ def village_ward_mapping(*, subdistID: str, villageName: str, df: pd.DataFrame, 
         threshold (int): cut-off for fuzzy matching, default set to 95
 
     Returns:
-        tuple: (LGD village/ward name, LGD village/ward code or admin_0 if not matched)
+        tuple: (LGD village/ward name, LGD village/ward code)
     """
     if pd.isna(subdistID) or pd.isna(villageName):
         return (pd.NA, pd.NA)

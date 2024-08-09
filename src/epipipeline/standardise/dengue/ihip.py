@@ -95,7 +95,6 @@ def standardise_ihip_v2(*, preprocessed_data_dict: dict,
             # check date range and format to str to avoid changes in dates while working with Excel
             for datevar in date_vars:
                 df[datevar] = df[datevar].apply(lambda x: check_date_bounds(Date=x, minDate=min_date, tagDate=max_date))
-                df[datevar] = df[datevar].apply(lambda x: x.isoformat() if pd.notnull(x) else None)
 
         # specify lower bound, upper bound not specified - defaults to date of running script
         elif min_date:
@@ -111,20 +110,9 @@ def standardise_ihip_v2(*, preprocessed_data_dict: dict,
             result = df.apply(lambda x: fix_two_dates(earlyDate=x["event.symptomOnsetDate"], lateDate=x["event.test.sampleCollectionDate"], minDate = min_date), axis=1)
             df["event.symptomOnsetDate"], df["event.test.sampleCollectionDate"] = zip(*result)
 
-            # Filter out cases base on result date range
-            if min_result_date:
-                try:
-                    min_result_date = pd.to_datetime(str(min_result_date))
-                except ValueError:
-                    raise ("Invalid date for min_result_date")
-                df = df[df["event.test.resultDate"]>=min_result_date]
-             else:
-                pass
-                 
             # check date range and format to str to avoid changes in dates while working with Excel
             for datevar in date_vars:
                 df[datevar] = df[datevar].apply(lambda x: check_date_bounds(Date=x, minDate=min_date))
-                df[datevar] = df[datevar].apply(lambda x: x.isoformat() if pd.notnull(x) else None)
 
         # specify upper bound, lower bound not specified
         elif max_date:
@@ -143,7 +131,6 @@ def standardise_ihip_v2(*, preprocessed_data_dict: dict,
             # check date range and format to str to avoid changes in dates while working with Excel
             for datevar in date_vars:
                 df[datevar] = df[datevar].apply(lambda x: check_date_bounds(Date=x, tagDate=max_date))
-                df[datevar] = df[datevar].apply(lambda x: x.isoformat() if pd.notnull(x) else None)
 
         else:
             # lower and upper bounds not specified - upper bound defaults to date of running script
@@ -162,8 +149,22 @@ def standardise_ihip_v2(*, preprocessed_data_dict: dict,
              # check dates to max date after swapping above, as raw data failing check date bounds may be due to swap issues
             for datevar in date_vars:
                 df[datevar] = df[datevar].apply(lambda x: check_date_bounds(Date=x))
+        
+
+            # filter out cases based on result date range
+            if min_result_date:
+                try:
+                    min_result_date = pd.to_datetime(str(min_result_date))
+                except ValueError:
+                    raise ("Invalid date for min_result_date")
+                
+                # filter based on result date
+                df = df[df["event.test.resultDate"] >= min_result_date]
+
+            # Format to iso format
+            for datevar in date_vars:
                 df[datevar] = df[datevar].apply(lambda x: x.isoformat() if pd.notnull(x) else None)
-            
+                 
         # Setting primary date - symptom date > sample date > result date
         df["metadata.primaryDate"] = df["event.symptomOnsetDate"].fillna(df["event.test.sampleCollectionDate"]).fillna(df["event.test.resultDate"]) # noqa: E501
 

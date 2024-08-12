@@ -144,27 +144,30 @@ def standardise_test_result(*, result:str) -> str:
         return "Negative"
     elif re.search(r"NS1|IgM|\bD\b|Yes|\bY\b|\+ve|Pos|1|Dengue", str(result), re.IGNORECASE):
         return "Positive"
+    elif re.search(r"Inconclusive", str(result), re.IGNORECASE):
+        return "Inconclusive"
     else:
         return "Unknown"
 
 
-def generate_test_count(*, test1:str, test2:str) -> int:
+def generate_test_count(*, test_results: list) -> int:
     """Generates test count from test result variables
 
     Args:
-        test1 (str): result from test 1 - positive, negative or unknown
-        test2 (str): result from test 2 - positive, negative or unknown
+        test_results: list of results
 
     Returns:
-        int: number of test results known - 0, 1 or 2
+        int: number of test results known
     """
 
-    if test1!="Unknown" and test2!="Unknown":
-        return 2
-    elif test1!="Unknown" or test2!="Unknown":
-        return 1
-    else:
+    if test_results==[]:
         return 0
+
+    count = 0
+    for test in test_results:
+        if test!="Unknown":
+            count+=1
+    return count
 
 
 def opd_ipd(*, s:str) -> str:

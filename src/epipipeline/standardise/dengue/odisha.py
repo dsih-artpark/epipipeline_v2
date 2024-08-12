@@ -66,7 +66,7 @@ for file in os.listdir(f"data/{pp_csvs}"):
         df["event.test.test2.result"] = df["event.test.test2.result"].apply(lambda x: standardise_test_result(result=x))
 
         # number of tests
-        df["event.test.numberOfTests"] = df.apply(lambda x: generate_test_count(test1=x["event.test.test1.result"], test2=x["event.test.test2.result"]), axis=1)  # noqa: E501
+        df["event.test.numberOfTests"] = df.apply(lambda x: generate_test_count(test_results=[x["event.test.test1.result"], x["event.test.test2.result"]]), axis=1)  # noqa: E501
 
         # Standardise Case variables
         df["case.urbanOrRural"] = df["case.urbanOrRural"].apply(lambda x: rural_urban(s=x))

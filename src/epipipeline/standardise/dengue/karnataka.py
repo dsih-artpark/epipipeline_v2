@@ -71,7 +71,7 @@ def standardise_ka_linelist_v3(*,
             lambda x: standardise_test_result(result=x))
 
         # Generate test count - [0,1,2]
-        df["event.test.numberOfTests"] = df.apply(lambda x: generate_test_count(test1=x["event.test.test1.result"], test2=x["event.test.test2.result"]), axis=1)  # noqa: E501
+        df["event.test.numberOfTests"] = df.apply(lambda x: generate_test_count(test_results=[x["event.test.test1.result"], x["event.test.test2.result"]]), axis=1)  # noqa: E501
 
         # Standardise case variables
         # OPD, IPD

@@ -47,7 +47,6 @@ for sheet in wb.sheet_names:
     # string clean colnames
     headers = [clean_colname(colname=col) for col in df.columns]
     df.columns=headers
-    print(df.columns)
     
     # rename columns based on standard mappers
     header_mapper=map_column(map_dict=standard_mapper)
@@ -76,5 +75,5 @@ for sheet in wb.sheet_names:
             df=df.drop(columns=col)
 
     # export to preprocessed
-    df.to_csv(f"orissa/preprocessed/{sheet}.csv", index=False)
+    df.to_csv(f"{sheet}.csv", index=False)
 

@@ -3,6 +3,7 @@ import re
 import dataio.download
 from dataio.download import (download_dataset_v2,fetch_data_documentation)
 from epipipeline.preprocess import (clean_colname, map_column, extract_test_method_with_result)
+import boto3
 
 # set-up metadata from metadata.yaml
 metadata=fetch_data_documentation(dsid = "EP0005DS0066")
@@ -10,11 +11,19 @@ metadata = metadata["tables"]["odisha_dengue_ll"]
 data_dictionary = metadata["data_dictionary"]
 config = metadata["admin"]["config"]
 rdsid = metadata["admin"]["dsid"]["raw"]
+dsid = metadata["admin"]["dsid"]["preprocessed"]
 raw_file = config["raw_file"]
 skip_rows = config["skip_rows"]
 merged_headers = config["merged_headers"]
 standard_mapper = config["standard_mapper"]
 required_headers = config["required_headers"]
+
+PP_BUCKET_NAME = config["upload"]["bucket"]
+FILE_NAME = config["upload"]["file_name"]
+KEY = D["admin"]["dsid"]["standardised"]+"-"+CONFIG["upload"]["prefix"]+"/"+FILE_NAME
+
+
+s3 = boto3.resource("s3")
 
 # download the raw file
 raw_excel_path = download_dataset_v2(dsid=rdsid, data_state = "raw")
@@ -74,6 +83,14 @@ for sheet in wb.sheet_names:
         if col not in data_dictionary.keys():
             df=df.drop(columns=col)
 
-    # export to preprocessed
+    # upload to preprocessed
     df.to_csv(f"{sheet}.csv", index=False)
+
+   
+try:
+    s3.meta.client.upload_file(Filename = FILE_NAME, Bucket= BUCKET_NAME, Key = KEY)
+    logging.info("Successfully uploaded to AWS S3")
+except Exception as e:
+    logging.warning(f"Failed to upload to AWS S3 - {e}")
+
 

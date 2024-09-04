@@ -16,6 +16,7 @@ dsid = metadata["admin"]["dsid"]["preprocessed"]
 str_cols = metadata["admin"]["config"]["str_cols"]
 
 # regions
+download_dataset_v2(dsid="GS0015DS0034")
 regions_df, regions_dict = get_regionIDs()
 
 # download preprocessed files
@@ -67,7 +68,6 @@ for file in os.listdir(f"data/{pp_csvs}"):
 
         # number of tests
         df["event.test.numberOfTests"] = df.apply(lambda x: generate_test_count(test_results=[x["event.test.test1.result"], x["event.test.test2.result"]]), axis=1)  # noqa: E501
-
         # Standardise Case variables
         df["case.urbanOrRural"] = df["case.urbanOrRural"].apply(lambda x: rural_urban(s=x))
 
@@ -83,9 +83,6 @@ for file in os.listdir(f"data/{pp_csvs}"):
         # districts
         res=df.apply(lambda x: dist_mapping(stateID=x["location.admin1.ID"], districtName=x["location.admin2.name"], df=regions_df), axis=1)
         df["location.admin2.name"], df["location.admin2.ID"]=zip(*res)
-
-        # dropping cases where district isna as these are out of state
-        df = df.dropna(subset="location.admin2.ID")
 
         # subdists
         res=df.apply(lambda x: subdist_ulb_mapping(districtID=x["location.admin2.ID"], subdistName=x["location.admin3.name"], df=regions_df), axis=1)

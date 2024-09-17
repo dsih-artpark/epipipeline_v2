@@ -215,3 +215,153 @@ def standardise_ka_linelist_v3(*,
     return standardise_data_dict
 
 
+def standardise_ka_summary_v2(raw_dict: dict,
+    drop_cols: Union[int, None],
+    header_mapper: dict,
+    min_cols: Union[list,None],
+    data_dict: dict,
+    regions: pd.DataFrame) -> dict: 
+
+    """Standardises daily summaries
+
+    Args:
+        raw_dict (dict): dictionary with key = date of report, value = df (raw data)
+        drop_cols (Union[int, None]): col index to be used
+        header_mapper (dict): dict mapping standardised colnames to a list of preprocessed colnames
+        min_cols (Union[list,None]): list of minimum cols the dataframe must have
+        data_dict (dict): full list of cols the std dataframe must have
+        regions (pd.DataFrame): dataframe of LGD regionids and names
+
+    Raises:
+        ValueError: invalid date for summary
+        Exception: file missing min cols
+
+    Returns:
+        dict: key = date of summary, value = std df
+    """
+    
+    standardised_dict={}
+
+    for key in raw_dict.keys():
+        logging.info(f"Processing {key}")
+        try:
+            date = pd.to_datetime(key, format="%Y-%m-%d")
+        except Exception as e:
+            raise ValueError(f"Invalid date format for {key}.")
+
+        df = raw_dict[key]
+        
+        if drop_cols:
+            df = df.iloc[:,:drop_cols]
+
+        logging.info("Cleaning merged headers..")
+
+        # forward fill unnamed and nan in current columns
+        for i in range(1, len(df.columns)):
+            if (re.match("Unnamed", str(df.columns[i]), re.IGNORECASE)) or (re.match("NaN", str(df.columns[i]), re.IGNORECASE)):
+                df.columns.values[i] = df.columns.values[i-1]
+
+        # identify index where df starts - i.e., S.No. is 1 - not ideal, explore pivot column
+        df_start = df[df.iloc[:, 0] == 1].index[0]
+
+        # for each header row in the dataframe (except last), forward fill if nan
+        for row in range(df_start-1):
+            df.iloc[row] = df.iloc[row].ffill()
+
+        # for each header row in the dataframe,upward merge
+        for row in range(df_start):
+            row_data = df.iloc[row].to_list()
+            for i in range(len(row_data)):
+                if not re.search("nan", str(row_data[i]), re.IGNORECASE):
+                    df.columns.values[i] = re.sub(r"[\d\-\(\)\s]+", "", df.columns.values[i].strip())+"_" + re.sub(r"[\d\-\(\)\s]+", "", str(row_data[i]).strip())
+
+        logging.info("Dropping extraneous cols & rows")
+
+        # drop village, etc.
+        drop_cols = [col for col in df.columns if re.search(
+            r"Taluk|Village|PHC|Population|Block|Remarks", col, re.IGNORECASE)]
+        df.drop(columns=drop_cols, inplace=True)
+
+        # remove header rows
+        df = df.iloc[df_start:, :]
+
+        # removed empty rows
+        df = df.dropna(axis=0, how="all")
+        df = df.dropna(axis=1, how="all")
+
+        logging.info(f"Extraneous cols & rows removed : {df.columns, df.shape[0]}.")
+
+        # standardising colnames
+        headers=[clean_colname(colname=col) for col in df.columns]
+
+        df.columns=headers
+
+        standard_headers = map_column(map_dict=header_mapper)
+
+        df = df.rename(columns=standard_headers)
+
+        logging.info(f"Standardised colnames: {df.columns}.")
+
+        # check that min cols are present
+        if min_cols:
+            if not set(min_cols).issubset(set(df.columns)):
+                raise Exception(f"File is missing minimum required columns - {set(min_cols).difference(set(df.columns))}. Current columns are: {df.columns}. Re-run the code/update header_mapper in metadata.yaml.")
+
+        # add standardised cols from metadata.yaml
+        # adding standard list of columns from metadata that are not present in the dataset
+        for col in data_dict:
+            if col not in df.columns:
+                if "default_value" in data_dict[col]:
+                    df[col] = data_dict[col]["default_value"]
+                else:
+                    df[col] = pd.NA
+
+        # extract BBMP from S.No. to district - the district
+        df["sl_no"] = df["sl_no"].astype(str)
+        df.loc[(df["sl_no"].str.contains(r"[Cc]ity") == True),"location.admin3.name"] = "BBMP"
+        df.loc[(df["location.admin3.name"] == "BBMP"),"location.admin2.name"] = "Bengaluru Urban"
+
+        # drop total, rows with district name missing
+        df = df[(df["location.admin2.name"].str.contains(r"[Tt]otal") == False) & (df["sl_no"].str.contains(r"[Tt]otal") == False) & (df["location.admin2.name"].isna() == False)]
+
+        # filtering dataset to retain only standardised cols
+        df = df[data_dict.keys()]
+
+        # geo-mapping - districts
+        logging.info("Standardising district and sub-districts.")
+
+        # Map district name to standardised LGD name and code
+        dists = df.apply(lambda x: dist_mapping(stateID=x["location.admin1.ID"], districtName=x["location.admin2.name"], df=regions), axis=1)
+
+        df["location.admin2.name"], df["location.admin2.ID"] = zip(*dists)
+
+        assert len(df[df["location.admin2.ID"] == "admin_0"]) == 0, "District(s) missing"
+
+        # Map subdistrict/ulb name to standardised LGD name and code
+        subdist = df.apply(lambda x: subdist_ulb_mapping(districtID=x["location.admin2.ID"], subdistName=x["location.admin3.name"], df=regions), axis=1)
+        df["location.admin3.name"], df["location.admin3.ID"] = zip(*subdist)
+
+        # Extract admin hierarchy from admin3.ID - ULB, REVENUE, admin_0 (if missing ulb/subdistrict LGD code)
+        df["location.admin.hierarchy"] = df["location.admin3.ID"].apply(lambda x: pd.NA if pd.isna(x) else "ULB" if x.startswith("ulb") else "Revenue" if x.startswith("subdistrict") else "admin_0")
+
+        # Drop duplicates across all vars after standardisation
+        df.drop_duplicates(inplace=True)
+
+        # Generate recordID after standardisation and de-duplication
+        df["metadata.recordID"] = [uuid.uuid4() for i in range(len(df))]
+
+        # Generate recordDate from dict key
+        df["metadata.recordDate"] = date.strftime('%Y-%m-%dT%H:%M:%SZ')
+        df["metadata.ISOWeek"] = date.isocalendar().week
+
+        # Cleaning int cols
+        for col in df.columns:
+            if col.startswith("daily") or col.startswith("cumulative"):
+                df[col] = df[col].fillna(0)
+                df[col] = df[col].astype(int)
+
+        # export file
+        standardised_dict[key] = df
+        logging.info(f"Standardised {key}")
+
+    return standardised_dict

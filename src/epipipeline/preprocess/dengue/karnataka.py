@@ -2,7 +2,7 @@ import logging
 import os
 import re
 import warnings
-from typing import Optional
+from typing import (Optional, Union)
 
 import numpy as np
 import pandas as pd
@@ -10,6 +10,7 @@ from dataio.download import download_dataset_v2
 
 from epipipeline.preprocess import (clean_colname, map_column)
 import logging
+import datetime
 
 
 # Set up logging
@@ -311,4 +312,110 @@ def preprocess_ka_linelist_v2(*,
     logger.info("Returning preprocessed data")
     return preprocessed_data_dict
 
+
+def fetch_ka_summary_v2(*, 
+    raw_file_name: str,
+    raw_folder_prefix: str, 
+    raw_dsid: str,
+    latest_std_date: Union[str, datetime.datetime], 
+    max_date: Union[str, datetime.datetime, None],
+    skip_rows: Union[int, None],
+    total_row_index: Union[int, None],
+    total_col_index_start: Union[int, None],
+    total_col_index_end: Union[int, None]) -> dict:
+    """
+
+    Extracts relevant sheets from the daily summaries excel file, and carries out basic checks before returning the raw df
+
+    1) Download monthly raw data file (excel workbook)
+    2) Extract sheets that start with DDR and are in the date range between the latest standardised file and the latest raw file received
+    3) Checks if the sheet is empty (totals for all daily columns are null)
+    4) Returns raw data as a dictionary where key = date, and value = df
+
+    Args:
+        raw_file_name (str): Name of the raw excel file (with suffix/file extension)
+        raw_folder_prefix (str): Name of the raw subfolder/subfolders path within the dsid
+        raw_dsid (str): Raw Dataset ID (e.g., EPRDS8)
+        latest_std_date (Union[str, datetime.datetime]): Date of the latest standardised daily summary available
+        max_date (Union[str, datetime.datetime, None]): Date of the latest raw daily summary received from the govt
+        skip_rows (Union[int, None]): Number of rows to skip (updated in metadata.yaml)
+        total_row_index (Union[int, None]): Index of the 'total' row (updated in metadata.yaml)
+        total_col_index_start (Union[int, None]): Start index of the cols to be checked for a null file (updated in metadata.yaml)
+        total_col_index_end (Union[int, None]): End index of the cols to be checked for a null file (updated in metadata.yaml)
+
+    Raises:
+        ValueError: Invalid date format for latest_std_date
+        ValueError: Invalid date format for max_date
+
+    Returns:
+        dict: dictionary where key = date of file, and value = raw df
+    """
+
+    # if raw_file_name does not contain suffix, add suffix - by default, raw files are .xlsx
+    if not re.search(r"\.", raw_file_name):
+        raw_file_name = raw_file_name + ".xlsx"
+    
+    # convert dates to pd.datetime and check date logic
+    try:
+        latest_std_date = pd.to_datetime(latest_std_date)
+    except Exception as e:
+        raise ValueError(f"Invalid date format for latest_std_date: {e}")
+    
+    if max_date:
+        try:
+            max_date = pd.to_datetime(max_date)
+        except Exception as e:
+            raise ValueError(f"Invalid date format for 'max_date': {e}")
+    else:
+        max_date = pd.to_datetime(datetime.datetime.today()).normalize()
+
+    assert latest_std_date <= max_date, f"max_date {max_date} is not <= latest_std_date {latest_std_date}, no files to process"
+
+    # Download the raw dataset
+    folder_path = download_dataset_v2(dsid=raw_dsid, data_state="raw", contains_all=raw_file_name)
+    logging.info("Downloaded raw dataset")
+    # import the raw dataset
+    raw_wb = pd.ExcelFile(f"data/{folder_path}/{raw_folder_prefix}/{raw_file_name}")
+
+    raw_dict = {}
+
+    # iterate through sheets and extract sheets that are between latest_std_date and max_date 
+    if not skip_rows:
+        skip_rows = 0
+    
+
+    for sheet in raw_wb.sheet_names:
+        if re.search(r"DDR \d", sheet, re.IGNORECASE):
+            date_str = re.search(r"\d{1,2}-\d{1,2}-\d{1,2}", sheet, re.IGNORECASE)
+            if date_str:
+                date_str = date_str.group(0)
+                try:
+                    date = pd.to_datetime(date_str, format='%d-%m-%y')
+                except Exception as e:
+                    logging.warning(f"Invalid date format for sheet name {sheet}. Moving to next sheet.")
+                    continue
+                
+                if (date > latest_std_date) and (date <= max_date):
+                    logging.info(f"Sheet {sheet} within date range. Processing..")
+                    raw_df = pd.read_excel(f"data/{folder_path}/{raw_folder_prefix}/{raw_file_name}", sheet, skiprows=skip_rows)
+                    if total_row_index and total_col_index_start and total_col_index_end:
+                        if raw_df.iloc[total_row_index, total_col_index_start: total_col_index_end].eq(0).all():
+                            logging.warning(f"Sheet name {sheet} has empty totals. Moving to next sheet.")
+                            continue
+                        else:
+                            raw_dict[str(date.date())] = raw_df
+                    else:
+                        raw_dict[str(date.date())] = raw_df
+                        logging.info(f"Processed {sheet}.")
+                else:
+                    logging.info(f"Sheet {sheet} not within date range. Moving to next sheet.")
+                    continue
+
+            else:
+                logging.info(f"Sheet {sheet} does not have a valid date. Moving to next sheet.")
+                continue
+        else:  
+            continue
+        
+    return raw_dict
 

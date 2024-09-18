@@ -4,6 +4,7 @@ import uuid
 from typing import (Optional, Union)
 
 import pandas as pd
+import re
 from epipipeline.standardise import (
     active_passive,
     clean_strings,

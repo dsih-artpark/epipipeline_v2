@@ -326,10 +326,6 @@ def standardise_ka_summary_v2(raw_dict: dict,
         # drop total, rows with district name missing
         df = df[(df["location.admin2.name"].str.contains(r"[Tt]otal") == False) & (df["sl_no"].str.contains(r"[Tt]otal") == False) & (df["location.admin2.name"].isna() == False)]
 
-        # filtering dataset to retain only standardised cols
-        std_cols=data_dict.keys().to_list()
-        df = df[std_cols]
-
         # geo-mapping - districts
         logging.info("Standardising district and sub-districts.")
 
@@ -362,8 +358,15 @@ def standardise_ka_summary_v2(raw_dict: dict,
             if col.startswith("daily") or col.startswith("cumulative"):
                 df[col] = df[col].fillna(0).astype(int)
 
+        # sorting and filtering headers
+        headers = [col for col in df.columns.to_list() if data_dictionary[col]["access"]]
+
+        headers = sorted(headers, key=list(data_dictionary.keys()).index)
+        df = df[headers]
+        
         # export file
         standardised_dict[key] = df
+        
         logging.info(f"Standardised {key}")
 
     return standardised_dict

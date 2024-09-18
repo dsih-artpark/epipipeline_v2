@@ -280,9 +280,9 @@ def standardise_ka_summary_v2(raw_dict: dict,
         logging.info("Dropping extraneous cols & rows")
 
         # drop village, etc.
-        drop_cols = [col for col in df.columns if re.search(
+        cols_to_drop = [col for col in df.columns if re.search(
             r"Taluk|Village|PHC|Population|Block|Remarks", col, re.IGNORECASE)]
-        df.drop(columns=drop_cols, inplace=True)
+        df.drop(columns=cols_to_drop, inplace=True)
 
         # remove header rows
         df = df.iloc[df_start:, :]

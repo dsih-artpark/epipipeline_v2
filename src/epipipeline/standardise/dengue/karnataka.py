@@ -19,7 +19,7 @@ from epipipeline.standardise import (
 )
 from epipipeline.standardise.dates import (extract_symptom_date, string_clean_dates, fix_year_for_ll, fix_two_dates, check_date_bounds)
 from epipipeline.standardise.gis import (subdist_ulb_mapping, village_ward_mapping)
-from epipipeline.preprocess import (clean_colname, map_colname)
+from epipipeline.preprocess import (clean_colname, map_column)
 
 # Set up logging
 logger = logging.getLogger("epipipeline.standardise.dengue.karnataka")

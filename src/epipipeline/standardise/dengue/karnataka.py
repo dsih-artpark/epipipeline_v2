@@ -1,7 +1,7 @@
 import datetime
 import logging
 import uuid
-from typing import Optional
+from typing import (Optional, Union)
 
 import pandas as pd
 from epipipeline.standardise import (

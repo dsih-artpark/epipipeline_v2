@@ -284,6 +284,8 @@ def standardise_ka_summary_v2(raw_dict: dict,
             r"Taluk|Village|PHC|Population|Block|Remarks", col, re.IGNORECASE)]
         df.drop(columns=drop_cols, inplace=True)
 
+        print(df.columns)
+
         # remove header rows
         df = df.iloc[df_start:, :]
 
@@ -303,6 +305,7 @@ def standardise_ka_summary_v2(raw_dict: dict,
         df = df.rename(columns=standard_headers)
 
         logging.info(f"Standardised colnames: {df.columns}.")
+        print(df.columns)
 
         # check that min cols are present
         if min_cols:
@@ -317,7 +320,7 @@ def standardise_ka_summary_v2(raw_dict: dict,
                     df[col] = data_dict[col]["default_value"]
                 else:
                     df[col] = pd.NA
-
+        print(df.columns)
         # extract BBMP from S.No. to district - the district
         df["sl_no"] = df["sl_no"].astype(str)
         df.loc[(df["sl_no"].str.contains(r"[Cc]ity") == True),"location.admin3.name"] = "BBMP"
@@ -362,6 +365,8 @@ def standardise_ka_summary_v2(raw_dict: dict,
         headers = [col for col in data_dict.keys() if data_dict[col]["access"]]
 
         df = df[headers]
+        print(df.columns)
+        print(headers)
         
         # export file
         standardised_dict[key] = df

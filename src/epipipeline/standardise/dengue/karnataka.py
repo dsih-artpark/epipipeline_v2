@@ -357,8 +357,7 @@ def standardise_ka_summary_v2(raw_dict: dict,
         # Cleaning int cols
         for col in df.columns:
             if col.startswith("daily") or col.startswith("cumulative"):
-                df[col] = df[col].fillna(0).astype(int)
-                df = df.infer_objects(copy=False)
+                df[col] = df[col].fillna(0).astype(int).infer_objects(copy=False)
                 
 
         # sorting and filtering headers

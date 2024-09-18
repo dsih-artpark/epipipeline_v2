@@ -86,6 +86,7 @@ def subdist_ulb_mapping(*, districtID: str, subdistName: str, df: pd.DataFrame, 
                          subdistName, flags=re.IGNORECASE)
     subdistName = re.sub(r'\(?\sR\)?$', "Rural",
                          subdistName, flags=re.IGNORECASE)
+    subdistName = re.sub(r'Balasore', "Baleshwar", subdistName, flags=re.IGNORECASE)
     
     # filter for subdistricts/ulbs
     if childType:

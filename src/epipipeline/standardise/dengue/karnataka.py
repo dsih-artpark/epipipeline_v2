@@ -359,9 +359,8 @@ def standardise_ka_summary_v2(raw_dict: dict,
                 df[col] = df[col].fillna(0).astype(int)
 
         # sorting and filtering headers
-        headers = [col for col in df.columns.to_list() if data_dict[col]["access"]]
+        headers = [col for col in data_dict.keys() if data_dict[col]["access"]]
 
-        headers = sorted(headers, key=list(data_dict.keys()).index)
         df = df[headers]
         
         # export file

@@ -31,7 +31,6 @@ def standardise_ihip_v2(*, preprocessed_data_dict: dict,
                         limit_year: Optional[int] = None,
                         min_date: Optional[datetime.datetime] = None,
                         max_date: Optional[datetime.datetime] = None,
-                        min_result_date: Optional[datetime.datetime] = None, 
                         regions: pd.DataFrame
                         ) -> dict:
     """Standardises preprocessed data for IHIP (GoK & BBMP)
@@ -150,17 +149,6 @@ def standardise_ihip_v2(*, preprocessed_data_dict: dict,
             for datevar in date_vars:
                 df[datevar] = df[datevar].apply(lambda x: check_date_bounds(Date=x))
         
-
-            # filter out cases based on result date range
-            if min_result_date:
-                try:
-                    min_result_date = pd.to_datetime(str(min_result_date))
-                except ValueError:
-                    raise ("Invalid date for min_result_date")
-                
-                # filter based on result date
-                df = df[df["event.test.resultDate"] >= min_result_date]
-
             # Format to iso format
             for datevar in date_vars:
                 df[datevar] = df[datevar].apply(lambda x: x.isoformat() if pd.notnull(x) else None)

@@ -145,7 +145,7 @@ def standardise_ka_linelist_v3(*,
         # Coerce dates to >= min date or <= current date, and format dates to ISO format
         for var in datevars:
             df[var] = df.apply(lambda x, var=var : check_date_bounds(
-                Date=x[var], districtName=x["location.admin2.name"], districtID=x["location.admin2.ID"]), axis=1)
+                Date=x[var], districtName=x["location.admin2.name"]), axis=1)
             df[var] = df[var].apply(lambda x: x.isoformat() if pd.notnull(x) else None)
 
         # Setting primary date - symptom date > sample date > result date

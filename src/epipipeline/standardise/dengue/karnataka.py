@@ -3,6 +3,8 @@ import logging
 import uuid
 from typing import (Optional, Union)
 
+pd.set_option('future.no_silent_downcasting', True)
+
 import pandas as pd
 import re
 from epipipeline.standardise import (
@@ -256,7 +258,7 @@ def standardise_ka_summary_v2(raw_dict: dict,
         if drop_cols:
             df = df.iloc[:,:drop_cols]
 
-        logging.info("Cleaning merged headers..")
+        logging.info(f"{key} - Cleaning merged headers..")
 
         # forward fill unnamed and nan in current columns
         for i in range(1, len(df.columns)):
@@ -277,7 +279,7 @@ def standardise_ka_summary_v2(raw_dict: dict,
                 if not re.search("nan", str(row_data[i]), re.IGNORECASE):
                     df.columns.values[i] = re.sub(r"[\d\-\(\)\s]+", "", df.columns.values[i].strip())+"_" + re.sub(r"[\d\-\(\)\s]+", "", str(row_data[i]).strip())
 
-        logging.info("Dropping extraneous cols & rows")
+        logging.info(f"{key} - Dropping extraneous cols & rows")
 
         # drop village, etc.
         cols_to_drop = [col for col in df.columns if re.search(
@@ -291,7 +293,7 @@ def standardise_ka_summary_v2(raw_dict: dict,
         df = df.dropna(axis=0, how="all")
         df = df.dropna(axis=1, how="all")
 
-        logging.info(f"Extraneous cols & rows removed : {df.columns, df.shape[0]}.")
+        logging.info(f"{key} - Extraneous cols & rows removed : {df.columns, df.shape[0]}.")
 
         # standardising colnames
         headers=[clean_colname(colname=col) for col in df.columns]
@@ -302,13 +304,13 @@ def standardise_ka_summary_v2(raw_dict: dict,
 
         df = df.rename(columns=standard_headers)
 
-        logging.info(f"Standardised colnames: {df.columns}.")
+        logging.info(f"{key} - Standardised colnames: {df.columns}.")
 
 
         # check that min cols are present
         if min_cols:
             if not set(min_cols).issubset(set(df.columns)):
-                raise Exception(f"File is missing minimum required columns - {set(min_cols).difference(set(df.columns))}. Current columns are: {df.columns}. Re-run the code/update header_mapper in metadata.yaml.")
+                raise Exception(f"File {key} is missing minimum required columns - {set(min_cols).difference(set(df.columns))}. Current columns are: {df.columns}. Re-run the code/update header_mapper in metadata.yaml.")
 
         # add standardised cols from metadata.yaml
         # adding standard list of columns from metadata that are not present in the dataset
@@ -328,7 +330,7 @@ def standardise_ka_summary_v2(raw_dict: dict,
         df = df[(df["location.admin2.name"].str.contains(r"[Tt]otal") == False) & (df["sl_no"].str.contains(r"[Tt]otal") == False) & (df["location.admin2.name"].isna() == False)]
 
         # geo-mapping - districts
-        logging.info("Standardising district and sub-districts.")
+        logging.info(f"{key} - Standardising district and sub-districts.")
 
         # Map district name to standardised LGD name and code
         dists = df.apply(lambda x: dist_mapping(stateID=x["location.admin1.ID"], districtName=x["location.admin2.name"], df=regions), axis=1)

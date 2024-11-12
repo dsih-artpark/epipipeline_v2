@@ -50,6 +50,7 @@ def standardise_ka_linelist_v3(*,
     for districtID in preprocessed_data_dict.keys():
 
         districtName = regionIDs_dict[districtID]
+        logger.debug(f"Standardising district {districtName}: ({districtID})")
         df = preprocessed_data_dict[districtID].copy()
         df["demographics.age"] = df["demographics.age"].apply(
             lambda x: standardise_age(age=x))

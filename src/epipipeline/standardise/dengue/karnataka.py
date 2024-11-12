@@ -3,8 +3,6 @@ import logging
 import uuid
 from typing import (Optional, Union)
 
-pd.set_option('future.no_silent_downcasting', True)
-
 import pandas as pd
 import re
 from epipipeline.standardise import (

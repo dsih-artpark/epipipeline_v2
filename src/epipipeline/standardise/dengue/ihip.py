@@ -61,6 +61,7 @@ def standardise_ihip_v2(*, preprocessed_data_dict: dict,
             if "default_value" in data_dictionary[col].keys():
                 df[col] = data_dictionary[col]["default_value"]
             elif col not in df.columns:
+                logging.warning(f"Column: {col} not found in dataset. Adding empty column.")
                 df[col]=pd.NA
 
         logger.debug(f"Fixing date vars")

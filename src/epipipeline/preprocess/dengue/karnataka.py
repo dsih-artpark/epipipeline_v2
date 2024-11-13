@@ -122,6 +122,7 @@ def preprocess_ka_linelist_v2(*,
                               district_specific_errors,
                               standard_mapper,
                               required_headers,
+                              date_col_names,
                               ffill_cols_dict) -> dict:
     """
     Preprocess raw district-level data into a standardised format for analysis.
@@ -133,6 +134,7 @@ def preprocess_ka_linelist_v2(*,
         district_specific_errors (dict): Dictionary containing header correction mappings for specific districts.
         standard_mapper (dict): Dictionary mapping standard header names to potential variants.
         required_headers (list): List of headers that are required in the final dataset.
+        date_col_names (list): List of date variable names to check if any datevars are missing.
         ffill_cols_dict (dict): Dictionary containing list of districts and variables where "" has been used to indicate ffill.
 
     Returns:
@@ -280,7 +282,8 @@ def preprocess_ka_linelist_v2(*,
         absent_headers = [head for head in required_headers if head not in df.columns.to_list()]
 
         if len(absent_headers) > 0:
-            raise Exception(f"District {districtName} ({districtID}) is missing {len(absent_headers)!s} header(s): {', '.join(absent_headers)!s}.")
+            if date_col_names.issubset(absent_headers):
+                raise Exception(f"District {districtName} ({districtID}) is missing {len(absent_headers)} header(s): {absent_headers}.")
         else:
             logger.info(f"All headers found for district {districtName} ({districtID})")
 

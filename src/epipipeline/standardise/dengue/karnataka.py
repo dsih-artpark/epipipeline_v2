@@ -217,8 +217,7 @@ def standardise_ka_linelist_v3(*,
 
         # Sort headers after removing PII vars
 
-        headers = [col for col in df.columns.to_list(
-        ) if data_dictionary[col]["access"]]
+        headers = [col for col in df.columns if col in data_dictionary and data_dictionary[col]["access"]]
 
         headers = sorted(headers, key=list(data_dictionary.keys()).index)
         df = df[headers]

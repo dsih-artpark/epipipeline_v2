@@ -121,8 +121,6 @@ def preprocess_ka_linelist_v2(*,
                               no_merge_headers,
                               district_specific_errors,
                               standard_mapper,
-                              default_values,
-                              accepted_headers,
                               required_headers,
                               ffill_cols_dict) -> dict:
     """
@@ -134,8 +132,6 @@ def preprocess_ka_linelist_v2(*,
         no_merge_headers (dict): Dictionary specifying districts with different header styles.
         district_specific_errors (dict): Dictionary containing header correction mappings for specific districts.
         standard_mapper (dict): Dictionary mapping standard header names to potential variants.
-        default_values (dict): Dictionary of default values to be set for specific fields.
-        accepted_headers (list): List of headers that are accepted in the final dataset.
         required_headers (list): List of headers that are required in the final dataset.
         ffill_cols_dict (dict): Dictionary containing list of districts and variables where "" has been used to indicate ffill.
 
@@ -152,12 +148,10 @@ def preprocess_ka_linelist_v2(*,
         7. Standardise column names to match the accepted headers.
         8. Separate columns for NS1 and IgM test results if specified.
         9. Combine metadata fields for name and address if necessary.
-        10. Fill default values for specified fields.
-        11. Add district-level metadata.
-        12. Filter and order columns based on accepted headers.
-        13. Check for missing required headers and log warnings if any.
-        14. Log the success of the preprocessing for each district and overall.
-        15. Ffill values where "" has been used
+        10. Add district-level metadata.
+        11. Check for missing required headers and log warnings if any.
+        12. Log the success of the preprocessing for each district and overall.
+        13. Ffill values where "" has been used
     """
     preprocessed_data_dict = {}
     all_districts_data_flag = True  # Flag to track if all districts have data
@@ -278,21 +272,9 @@ def preprocess_ka_linelist_v2(*,
                 df["metadata.nameAddress"] = pd.NA
                 logger.info(f"Name, address, and nameAddress unavailable for {districtID}. Set to NA")
 
-        # Set default values for specified fields
-        for field, value in default_values.items():
-            df[field] = value
-        logger.debug(f"Set default values for district {districtID}: {default_values}")
-
         # Add district-level metadata
         df["location.admin2.ID"] = districtID
         df["location.admin2.name"] = districtName
-
-        # Only take accepted columns, and order as per the data dictionary
-        headers = [head for head in df.columns.to_list() if head in accepted_headers]
-        headers = sorted(headers, key=accepted_headers.index)
-
-        df = df[headers]
-        logger.debug(f"Filtered and ordered columns for district {districtID} based on accepted headers")
 
         # Check for missing required headers
         absent_headers = [head for head in required_headers if head not in df.columns.to_list()]

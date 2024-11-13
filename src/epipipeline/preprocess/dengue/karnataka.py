@@ -298,7 +298,7 @@ def preprocess_ka_linelist_v2(*,
         absent_headers = [head for head in required_headers if head not in df.columns.to_list()]
 
         if len(absent_headers) > 0:
-            warnings.warn(f"District {districtName} ({districtID}) is missing {len(absent_headers)!s} header(s): {', '.join(absent_headers)!s}.", stacklevel=2)  # noqa: E501
+            raise Exception(f"District {districtName} ({districtID}) is missing {len(absent_headers)!s} header(s): {', '.join(absent_headers)!s}.")
         else:
             logger.info(f"All headers found for district {districtName} ({districtID})")
 

@@ -205,14 +205,14 @@ def standardise_ka_linelist_v3(*,
         # Generate recordID after standardisation and de-duplication
         df["metadata.recordID"] = [uuid.uuid4() for i in range(len(df))]
 
-        # generate patient UUIDs
-        df["age_limit"] = df["demographics.age"].apply(lambda x: f"{x-1}-{x+1}")
-        df["metadata.patientID"] = df.groupby(by=['metadata.name', 'metadata.contact', 'demographics.gender', 'age_limit', 'metadata.address']).ngroup().apply(lambda x: uuid.uuid4())
+        # # generate patient UUIDs
+        # df["age_limit"] = df["demographics.age"].apply(lambda x: f"{x-1}-{x+1}")
+        # df["metadata.patientID"] = df.groupby(by=['metadata.nameAddress', 'metadata.contact', 'demographics.gender', 'age_limit', 'metadata.address']).ngroup().apply(lambda x: uuid.uuid4())
         
-        duplicate_patients = len(df[df.duplicated(subset="metadata.patientID")])
+        # duplicate_patients = len(df[df.duplicated(subset="metadata.patientID")])
 
-        if duplicate_patients > 0:
-            logger.warning(f"There are {duplicate_patients} duplicate patients")
+        # if duplicate_patients > 0:
+        #     logger.warning(f"There are {duplicate_patients} duplicate patients")
 
 
         # Sort headers after removing PII vars

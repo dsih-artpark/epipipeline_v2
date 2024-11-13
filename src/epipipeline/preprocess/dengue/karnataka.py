@@ -282,7 +282,7 @@ def preprocess_ka_linelist_v2(*,
         absent_headers = [head for head in required_headers if head not in df.columns.to_list()]
 
         if len(absent_headers) > 0:
-            if date_col_names.issubset(absent_headers):
+            if set(date_col_names).issubset(set(absent_headers)):
                 raise Exception(f"District {districtName} ({districtID}) is missing {len(absent_headers)} header(s): {absent_headers}.")
         else:
             logger.info(f"All headers found for district {districtName} ({districtID})")

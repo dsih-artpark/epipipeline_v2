@@ -160,7 +160,7 @@ def preprocess_ihip_v2(*,
         min_cols_missing = set(minimum_columns) - set(df.columns)
 
         if len(min_cols_missing)>1:
-            logger.warning(f"District {districtName} is missing minimum required columns {min_cols_missing}", stacklevel=2)
+            raise Exception(f"Missing columns: District {districtName} is missing minimum required columns {min_cols_missing}")
 
         # filter empty rows
         df=df.dropna(how="all", axis=0)

@@ -51,7 +51,7 @@ def standardise_ka_linelist_v3(*,
 
 
         districtName = regionIDs_dict[districtID]
-        logger.debug(f"Standardising district {districtName}: ({districtID})")
+        logger.info(f"Standardising district {districtName}: ({districtID})")
         df = preprocessed_data_dict[districtID].copy()
         
         # add standardised cols
@@ -301,7 +301,7 @@ def standardise_ka_summary_v2(raw_dict: dict,
         df = df.dropna(axis=0, how="all")
         df = df.dropna(axis=1, how="all")
 
-        logging.info(f"{key} - Extraneous cols & rows removed : {df.columns, df.shape[0]}.")
+        logging.debug(f"{key} - Extraneous cols & rows removed : {df.columns, df.shape[0]}.")
 
         # standardising colnames
         headers=[clean_colname(colname=col) for col in df.columns]
@@ -312,7 +312,7 @@ def standardise_ka_summary_v2(raw_dict: dict,
 
         df = df.rename(columns=standard_headers)
 
-        logging.info(f"{key} - Standardised colnames: {df.columns}.")
+        logging.debug(f"{key} - Standardised colnames: {df.columns}.")
 
 
         # check that min cols are present

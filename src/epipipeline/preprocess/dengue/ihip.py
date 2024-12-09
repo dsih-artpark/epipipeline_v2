@@ -87,8 +87,11 @@ def preprocess_ihip_v2(*,
         standard_mapper (dict): Mapping of raw column names to standardised column names
         minimum_columns (list): List of minimum expected columns in the raw dataset
 
+     Raises:
+        Exception: District missing minimum required columns
+
     Returns:
-        dict: Preprocessed data with 
+        dict: Preprocessed data
     """
     
     preprocessed_data_dict = {}
